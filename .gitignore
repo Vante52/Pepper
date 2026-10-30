@@ -428,9 +428,6 @@ FodyWeavers.xsd
 #*.lscache
 
 /pepper_localization/
-/pepper_gz/
-/pepper_gazebo/
-
 /pepper_description/urdf/pepper.urdf
 
 /pepper_description/README.md
