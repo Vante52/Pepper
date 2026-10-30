@@ -3,17 +3,20 @@
 <package format="3">
   <name>pepper_gz</name>
   <version>0.0.0</version>
-  <description>Sensores simulados de Pepper para Gazebo Harmonic.</description>
+  <description>Simulación, sensores y control de Pepper en Gazebo Harmonic.</description>
   <maintainer email="val3kta@gmail.com">valkyrie</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>geometry_msgs</test_depend>
-  <test_depend>sensor_msgs_py</test_depend>
   <test_depend>std_msgs</test_depend>
+  <test_depend>tf2_ros</test_depend>
+  <test_depend>sensor_msgs_py</test_depend>
+  <test_depend>python3-numpy</test_depend>
 
   <exec_depend>pepper_description</exec_depend>
   <exec_depend>ament_index_python</exec_depend>
@@ -23,13 +26,15 @@
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>ros_gz_sim</exec_depend>
   <exec_depend>ros_gz_bridge</exec_depend>
+  <exec_depend>gz_ros2_control</exec_depend>
+  <exec_depend>controller_manager</exec_depend>
+  <exec_depend>joint_state_broadcaster</exec_depend>
+  <exec_depend>joint_trajectory_controller</exec_depend>
+  <exec_depend>trajectory_msgs</exec_depend>
+  <exec_depend>control_msgs</exec_depend>
   <exec_depend>rclpy</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
-  <exec_depend>sensor_msgs_py</exec_depend>
   <exec_depend>rosgraph_msgs</exec_depend>
-  <exec_depend>tf2_ros</exec_depend>
-  <exec_depend>tf2_sensor_msgs</exec_depend>
-  <exec_depend>python3-numpy</exec_depend>
   <exec_depend>python3-yaml</exec_depend>
 
   <export>

@@ -1,0 +1,36 @@
+controller_manager:
+  ros__parameters:
+    use_sim_time: true
+    update_rate: 100
+    enforce_command_limits: true
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+    posture_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+    head_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+joint_state_broadcaster:
+  ros__parameters:
+    use_sim_time: true
+    interfaces: [position, velocity]
+
+posture_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints: [HipRoll, HipPitch, KneePitch]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    allow_partial_joints_goal: false
+    interpolate_from_desired_state: false
+    set_last_command_interface_value_as_state_on_activation: false
+
+head_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints: [HeadYaw, HeadPitch]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    allow_partial_joints_goal: false
+    interpolate_from_desired_state: false
+    set_last_command_interface_value_as_state_on_activation: false

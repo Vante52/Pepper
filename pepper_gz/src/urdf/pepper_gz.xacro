@@ -2,10 +2,5 @@
 <robot name="pepper" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include filename="$(find pepper_description)/urdf/pepper_robot.xacro"/>
   <xacro:include filename="pepper_sensors.xacro"/>
-  <gazebo>
-    <plugin filename="gz-sim-joint-state-publisher-system"
-            name="gz::sim::systems::JointStatePublisher">
-      <topic>/pepper/joint_states</topic>
-    </plugin>
-  </gazebo>
+  <xacro:include filename="pepper_control.xacro"/>
 </robot>

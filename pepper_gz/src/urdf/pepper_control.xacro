@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="controllers_config" default="$(find pepper_gz)/config/controllers.yaml"/>
+
+  <xacro:macro name="pepper_position_joint" params="name">
+    <joint name="${name}">
+      <command_interface name="position"/>
+      <state_interface name="position">
+        <param name="initial_value">0.0</param>
+      </state_interface>
+      <state_interface name="velocity">
+        <param name="initial_value">0.0</param>
+      </state_interface>
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="pepper_passive_joint" params="name">
+    <joint name="${name}">
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </xacro:macro>
+
+  <ros2_control name="PepperGazeboSystem" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <xacro:pepper_position_joint name="HipRoll"/>
+    <xacro:pepper_position_joint name="HipPitch"/>
+    <xacro:pepper_position_joint name="KneePitch"/>
+    <xacro:pepper_position_joint name="HeadYaw"/>
+    <xacro:pepper_position_joint name="HeadPitch"/>
+
+    <xacro:pepper_passive_joint name="LShoulderPitch"/>
+    <xacro:pepper_passive_joint name="LShoulderRoll"/>
+    <xacro:pepper_passive_joint name="LElbowYaw"/>
+    <xacro:pepper_passive_joint name="LElbowRoll"/>
+    <xacro:pepper_passive_joint name="LWristYaw"/>
+    <xacro:pepper_passive_joint name="LHand"/>
+    <xacro:pepper_passive_joint name="RShoulderPitch"/>
+    <xacro:pepper_passive_joint name="RShoulderRoll"/>
+    <xacro:pepper_passive_joint name="RElbowYaw"/>
+    <xacro:pepper_passive_joint name="RElbowRoll"/>
+    <xacro:pepper_passive_joint name="RWristYaw"/>
+    <xacro:pepper_passive_joint name="RHand"/>
+    <xacro:pepper_passive_joint name="WheelFL"/>
+    <xacro:pepper_passive_joint name="WheelFR"/>
+    <xacro:pepper_passive_joint name="WheelB"/>
+  </ros2_control>
+
+  <gazebo>
+    <plugin filename="libgz_ros2_control-system.so"
+            name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(arg controllers_config)</parameters>
+      <hold_joints>true</hold_joints>
+    </plugin>
+  </gazebo>
+</robot>
