@@ -6,7 +6,7 @@
 	<joint name="LShoulderPitch" type="revolute">
 		<parent link="torso"/>
 		<child link="LShoulder"/>
-		<origin rpy="0 0 0" xyz="-0.057 0.14974 0.08682"/>
+		<origin rpy="0 0 0" xyz="-0.05702 0.14974 0.22582"/>
 		<axis xyz="0 1.0 0"/>
 		<limit effort="5.428" lower="-2.08567" upper="2.08567" velocity="7.33998"/>
 	</joint>
@@ -94,7 +94,7 @@
 	<joint name="RShoulderPitch" type="revolute">
 		<parent link="torso"/>
 		<child link="RShoulder"/>
-		<origin rpy="0 0 0" xyz="-0.057 -0.14974 0.08682"/>
+		<origin rpy="0 0 0" xyz="-0.05702 -0.14974 0.22582"/>
 		<axis xyz="0 1.0 0"/>
 		<limit effort="5.428" lower="-2.08567" upper="2.08567" velocity="7.33998"/>
 	</joint>

@@ -36,13 +36,13 @@
 			<geometry>
 				<mesh filename="package://pepper_description/meshes/HipRoll.dae" scale="0.1 0.1 0.1"/>
 			</geometry>
-			<origin rpy="0 0 0" xyz="0 0 0"/>
+			<origin rpy="0 0 0" xyz="0 0 0.079"/>
 		</visual>
 		<collision>
 			<geometry>
 				<mesh filename="package://pepper_description/meshes/HipRoll_0.10.stl" scale="0.1 0.1 0.1"/>
 			</geometry>
-			<origin rpy="0 0 0" xyz="0 0 0"/>
+			<origin rpy="0 0 0" xyz="0 0 0.079"/>
 		</collision>
 	</xacro:macro>
 	<xacro:macro name="insert_visu_LElbow">
@@ -241,7 +241,7 @@
 			<origin rpy="0 0 0" xyz="0 0 0"/>
 		</collision>
 	</xacro:macro>
-	<xacro:macro name="insert_visu_Tibia">
+	<xacro:macro name="insert_visu_base">
 		<visual>
 			<geometry>
 				<mesh filename="package://pepper_description/meshes/KneePitch.dae" scale="0.1 0.1 0.1"/>
@@ -540,13 +540,13 @@
 			<geometry>
 				<mesh filename="package://pepper_description/meshes/Torso.dae" scale="0.1 0.1 0.1"/>
 			</geometry>
-			<origin rpy="0 0 0" xyz="0 0 0"/>
+			<origin rpy="0 0 0" xyz="-0.00002 0 0.139"/>
 		</visual>
 		<collision>
 			<geometry>
 				<mesh filename="package://pepper_description/meshes/Torso_0.10.stl" scale="0.1 0.1 0.1"/>
 			</geometry>
-			<origin rpy="0 0 0" xyz="0 0 0"/>
+			<origin rpy="0 0 0" xyz="-0.00002 0 0.139"/>
 		</collision>
 	</xacro:macro>
 	<xacro:macro name="insert_visu_RFinger42_link">
@@ -652,13 +652,13 @@
 			<geometry>
 				<mesh filename="package://pepper_description/meshes/HipPitch.dae" scale="0.1 0.1 0.1"/>
 			</geometry>
-			<origin rpy="0 0 0" xyz="0 0 0"/>
+			<origin rpy="0 0 0" xyz="0 0 0.268"/>
 		</visual>
 		<collision>
 			<geometry>
 				<mesh filename="package://pepper_description/meshes/HipPitch_0.10.stl" scale="0.1 0.1 0.1"/>
 			</geometry>
-			<origin rpy="0 0 0" xyz="0 0 0"/>
+			<origin rpy="0 0 0" xyz="0 0 0.268"/>
 		</collision>
 	</xacro:macro>
 </robot>

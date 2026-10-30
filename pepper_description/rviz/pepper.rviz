@@ -48,7 +48,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: base_footprint
+    Fixed Frame: base_link
     Frame Rate: 30
   Name: root
   Tools:
@@ -62,10 +62,10 @@ Visualization Manager:
       Focal Point:
         X: 0
         Y: 0
-        Z: 0.6
+        Z: 0
       Name: Current View
       Pitch: 0.35
-      Target Frame: base_footprint
+      Target Frame: base_link
       Yaw: 0.8
 Window Geometry:
   Height: 900
