@@ -1,0 +1,66 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/RobotModel
+      Name: Pepper
+      Enabled: true
+      Alpha: 0.6
+      Description Source: Topic
+      Description Topic:
+        Value: /robot_description
+        Depth: 1
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+      Visual Enabled: true
+      Collision Enabled: false
+      Update Interval: 0
+    - Class: rviz_default_plugins/PointCloud2
+      Name: Depth points
+      Enabled: true
+      Topic:
+        Value: /pepper/camera/depth/points
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+      Position Transformer: XYZ
+      Color Transformer: FlatColor
+      Color: 0; 255; 128
+      Alpha: 1
+      Style: Flat Squares
+      Size (m): 0.025
+      Size (Pixels): 3
+      Decay Time: 0
+      Use Fixed Frame: true
+      Selectable: true
+  Enabled: true
+  Global Options:
+    Fixed Frame: base_link
+    Background Color: 30; 30; 35
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Name: Current View
+      Distance: 10
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+      Pitch: 0.4
+      Yaw: 0.8
+      Target Frame: base_link
+Window Geometry:
+  Width: 1280
+  Height: 800

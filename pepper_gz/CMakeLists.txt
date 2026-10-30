@@ -13,9 +13,20 @@ find_package(ament_cmake REQUIRED)
 install(
   DIRECTORY
     src/launch
+    src/config
+    src/rviz
     src/urdf
     src/worlds
   DESTINATION share/${PROJECT_NAME}
+)
+
+install(PROGRAMS scripts/depth_points_optical.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME depth_points_optical
+)
+install(PROGRAMS scripts/check_sensors.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME check_sensors
 )
 
 if(BUILD_TESTING)

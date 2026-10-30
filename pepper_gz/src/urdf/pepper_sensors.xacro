@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="sensors_config" default="$(find pepper_gz)/config/sensors.yaml"/>
+  <xacro:property name="sensors" value="${xacro.load_yaml('$(arg sensors_config)')}"/>
+
+  <xacro:macro name="gz_camera" params="sensor">
+    <gazebo reference="${sensor['frame']}">
+      <sensor name="${sensor['name']}" type="${sensor['type']}">
+        <always_on>true</always_on>
+        <update_rate>${sensor['update_rate']}</update_rate>
+        <visualize>false</visualize>
+        <topic>${sensor['topic']}</topic>
+        <camera name="${sensor['name']}">
+          <camera_info_topic>${sensor['info_topic']}</camera_info_topic>
+          <optical_frame_id>${sensor['optical_frame']}</optical_frame_id>
+          <horizontal_fov>${sensor['horizontal_fov']}</horizontal_fov>
+          <image>
+            <width>${sensor['width']}</width>
+            <height>${sensor['height']}</height>
+            <format>${sensor['format']}</format>
+            <anti_aliasing>1</anti_aliasing>
+          </image>
+          <clip>
+            <near>${sensor['near']}</near>
+            <far>${sensor['far']}</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>${sensor['noise_mean']}</mean>
+            <stddev>${sensor['noise_stddev']}</stddev>
+          </noise>
+        </camera>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:macro name="gz_imu_axis_noise" params="mean stddev">
+    <noise type="gaussian">
+      <mean>${mean}</mean>
+      <stddev>${stddev}</stddev>
+      <bias_mean>0</bias_mean>
+      <bias_stddev>0</bias_stddev>
+      <dynamic_bias_stddev>0</dynamic_bias_stddev>
+      <dynamic_bias_correlation_time>0</dynamic_bias_correlation_time>
+    </noise>
+  </xacro:macro>
+
+  <xacro:macro name="gz_imu" params="sensor">
+    <gazebo reference="${sensor['frame']}">
+      <sensor name="${sensor['name']}" type="imu">
+        <always_on>true</always_on>
+        <update_rate>${sensor['update_rate']}</update_rate>
+        <visualize>false</visualize>
+        <topic>${sensor['topic']}</topic>
+        <gz_frame_id>${sensor['frame']}</gz_frame_id>
+        <imu>
+          <orientation_reference_frame>
+            <localization>CUSTOM</localization>
+            <custom_rpy parent_frame="world">0 0 0</custom_rpy>
+          </orientation_reference_frame>
+          <angular_velocity>
+            <x><xacro:gz_imu_axis_noise mean="${sensor['angular_velocity_mean']}" stddev="${sensor['angular_velocity_stddev']}"/></x>
+            <y><xacro:gz_imu_axis_noise mean="${sensor['angular_velocity_mean']}" stddev="${sensor['angular_velocity_stddev']}"/></y>
+            <z><xacro:gz_imu_axis_noise mean="${sensor['angular_velocity_mean']}" stddev="${sensor['angular_velocity_stddev']}"/></z>
+          </angular_velocity>
+          <linear_acceleration>
+            <x><xacro:gz_imu_axis_noise mean="${sensor['acceleration_mean']}" stddev="${sensor['acceleration_stddev']}"/></x>
+            <y><xacro:gz_imu_axis_noise mean="${sensor['acceleration_mean']}" stddev="${sensor['acceleration_stddev']}"/></y>
+            <z><xacro:gz_imu_axis_noise mean="${sensor['acceleration_mean']}" stddev="${sensor['acceleration_stddev']}"/></z>
+          </linear_acceleration>
+        </imu>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:gz_camera sensor="${sensors['cameras']['top']}"/>
+  <xacro:gz_camera sensor="${sensors['cameras']['bottom']}"/>
+  <xacro:gz_camera sensor="${sensors['cameras']['depth']}"/>
+  <xacro:gz_imu sensor="${sensors['imus']['base']}"/>
+  <xacro:gz_imu sensor="${sensors['imus']['torso']}"/>
+</robot>
