@@ -1,7 +1,4 @@
-# Copyright 2026 Pepper contributors
-# Licensed under the Apache License, Version 2.0.
-
-"""Display Pepper's physical model independently of localization."""
+"""Visualización de Pepper."""
 
 from pathlib import Path
 
@@ -16,7 +13,7 @@ import xacro
 
 
 def launch_setup(context):
-    """Expand the physical model with the selected base_link height."""
+    """Configura el modelo y los nodos de visualización."""
     package_share = Path(get_package_share_directory('pepper_description'))
     height = LaunchConfiguration('base_link_height').perform(context)
     robot_xml = xacro.process_file(
@@ -45,11 +42,11 @@ def launch_setup(context):
 
 
 def generate_launch_description():
-    """Declare physical-model and visualization arguments."""
+    """Genera el lanzamiento de visualización."""
     return LaunchDescription([
         DeclareLaunchArgument(
             'base_link_height', default_value='0.602',
-            description='Body-fixed height in metres; defaults to nominal HipPitch height',
+            description='Altura nominal de base_link en metros',
         ),
         DeclareLaunchArgument('gui', default_value='true'),
         DeclareLaunchArgument('rviz', default_value='true'),

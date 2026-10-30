@@ -19,9 +19,6 @@
     <image id="juliette_face_png" name="juliette_face_png">
       <init_from>./juliette_face.png</init_from>
     </image>
-    <image id="juliette_head_png" name="juliette_head_png">
-      <init_from>./juliette_head.png</init_from>
-    </image>
   </library_images>
   <library_effects>
     <effect id="face_tex-effect">

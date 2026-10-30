@@ -427,6 +427,12 @@ FodyWeavers.xsd
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
 
-# Paquetes locales fuera del alcance de este repositorio
 /pepper_localization/
 /pepper_gz/
+/pepper_gazebo/
+
+/pepper_description/urdf/pepper.urdf
+
+/pepper_description/README.md
+/pepper_description/docs/collision_geometry.png
+/pepper_description/docs/collision_details.png

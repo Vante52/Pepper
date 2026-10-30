@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="collision_sphere" params="name radius xyz:='0 0 0'">
+    <collision name="${name}">
+      <origin xyz="${xyz}" rpy="0 0 0"/>
+      <geometry><sphere radius="${radius}"/></geometry>
+    </collision>
+  </xacro:macro>
+
+  <xacro:macro name="collision_cylinder" params="name radius length xyz rpy:='0 0 0'">
+    <collision name="${name}">
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+      <geometry><cylinder radius="${radius}" length="${length}"/></geometry>
+    </collision>
+  </xacro:macro>
+
+  <xacro:macro name="collision_box" params="name size xyz">
+    <collision name="${name}">
+      <origin xyz="${xyz}" rpy="0 0 0"/>
+      <geometry><box size="${size}"/></geometry>
+    </collision>
+  </xacro:macro>
+
+  <xacro:macro name="collision_wheel">
+    <xacro:collision_sphere name="wheel" radius="0.070"/>
+  </xacro:macro>
+
+  <xacro:macro name="collision_base">
+    <xacro:collision_box name="lower_chassis" size="0.432 0.476 0.108"
+                         xyz="-0.035 0 -0.254"/>
+    <xacro:collision_box name="middle_chassis" size="0.382 0.404 0.100"
+                         xyz="-0.030 0 -0.150"/>
+    <xacro:collision_cylinder name="upper_chassis" radius="0.115" length="0.104"
+                              xyz="-0.0318 0 -0.050"/>
+    <xacro:collision_cylinder name="knee" radius="0.052" length="0.200"
+                              xyz="0 0 0" rpy="${pi/2} 0 0"/>
+  </xacro:macro>
+
+  <xacro:macro name="collision_pelvis">
+    <xacro:collision_cylinder name="pelvis" radius="0.120" length="0.330"
+                              xyz="0.008 0 ${0.268 - 0.095}"/>
+  </xacro:macro>
+
+  <xacro:macro name="collision_hip">
+    <xacro:collision_cylinder name="lower_hip" radius="0.087" length="0.160"
+                              xyz="0.00046 0 ${0.079 - 0.080}"/>
+    <xacro:collision_cylinder name="upper_hip" radius="0.051" length="0.046"
+                              xyz="0.00031 0 ${0.079 + 0.022}"/>
+  </xacro:macro>
+
+  <xacro:macro name="collision_torso">
+    <xacro:collision_cylinder name="lower_torso" radius="0.094" length="0.090"
+                              xyz="${-0.00002 - 0.00066} 0 ${0.139 - 0.094}"/>
+    <xacro:collision_box name="middle_torso" size="0.284 0.254 0.120"
+                         xyz="${-0.00002 + 0.01475} 0 0.139"/>
+    <xacro:collision_box name="upper_torso" size="0.244 0.294 0.122"
+                         xyz="${-0.00002 - 0.018} 0 ${0.139 + 0.110}"/>
+  </xacro:macro>
+
+  <xacro:macro name="collision_neck">
+    <xacro:collision_cylinder name="neck" radius="0.034" length="0.064"
+                              xyz="-0.00075 0 0.00395"/>
+  </xacro:macro>
+
+  <xacro:macro name="collision_head">
+    <xacro:collision_sphere name="head" radius="0.115" xyz="0.00485 0 0.11495"/>
+  </xacro:macro>
+
+  <xacro:macro name="collision_shoulder">
+    <xacro:collision_cylinder name="shoulder" radius="0.042" length="0.060"
+                              xyz="0 0 0"/>
+  </xacro:macro>
+
+  <xacro:macro name="collision_upper_arm" params="side">
+    <xacro:collision_cylinder name="upper_arm_proximal" radius="0.050" length="0.070"
+                              xyz="0.005 ${side * 0.00807} -0.0001" rpy="0 ${pi/2} 0"/>
+    <xacro:collision_cylinder name="upper_arm_distal" radius="0.044" length="0.136"
+                              xyz="0.107 ${side * 0.0155} -0.0005" rpy="0 ${pi/2} 0"/>
+  </xacro:macro>
+
+  <xacro:macro name="collision_elbow">
+    <xacro:collision_sphere name="elbow" radius="0.0325"/>
+  </xacro:macro>
+
+  <xacro:macro name="collision_forearm" params="side">
+    <xacro:collision_cylinder name="forearm" radius="0.041" length="0.090"
+                              xyz="0.045 ${side * 0.002} -0.0003" rpy="0 ${pi/2} 0"/>
+  </xacro:macro>
+
+  <xacro:macro name="collision_hand" params="side">
+    <xacro:collision_cylinder name="wrist" radius="0.032" length="0.054"
+                              xyz="-0.037 0 0" rpy="0 ${pi/2} 0"/>
+    <xacro:collision_box name="palm" size="0.105 0.090 0.069"
+                         xyz="0.042 ${side * -0.00275} 0.00085"/>
+  </xacro:macro>
+
+  <xacro:macro name="collision_finger">
+    <xacro:collision_cylinder name="phalanx" radius="0.009" length="0.028"
+                              xyz="0.0083 0.0001 0.0004" rpy="0 ${pi/2} 0"/>
+  </xacro:macro>
+
+  <xacro:macro name="collision_fingertip">
+    <xacro:collision_cylinder name="fingertip" radius="0.0083" length="0.023"
+                              xyz="0.00585 0.000325 0.0011" rpy="0 ${pi/2} 0"/>
+  </xacro:macro>
+</robot>

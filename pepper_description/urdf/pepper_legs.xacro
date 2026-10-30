@@ -1,8 +1,5 @@
 <?xml version="1.0" ?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-	<!-- base_link is fixed to the chassis at nominal HipPitch height.
-	     It coincides with Hip at zero joint angles and does not follow hip motion.
-	     base retains the former Tibia frame. -->
 	<link name="base_link" />
 	<joint name="base_link_fixedjoint" type="fixed">
 		<parent link="base_link" />
@@ -23,6 +20,7 @@
 			<origin rpy="0 0 0" xyz="0.00032 0 0.01861" />
 		</inertial>
 		<xacro:insert_visu_Hip />
+		<xacro:collision_hip/>
 	</link>
 	<joint name="HipPitch" type="revolute">
 		<parent link="Pelvis" />
@@ -38,6 +36,7 @@
 			<origin rpy="0 0 0" xyz="0.00237 0 0.17146" />
 		</inertial>
 		<xacro:insert_visu_Pelvis />
+		<xacro:collision_pelvis/>
 	</link>
 	<joint name="KneePitch" type="revolute">
 		<parent link="base" />
@@ -53,5 +52,6 @@
 			<origin rpy="0 0 0" xyz="0.00220451 0 -0.185729" />
 		</inertial>
 		<xacro:insert_visu_base />
+		<xacro:collision_base/>
 	</link>
 </robot>
