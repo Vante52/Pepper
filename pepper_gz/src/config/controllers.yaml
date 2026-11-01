@@ -1,3 +1,15 @@
+pepper_gz:
+  ros__parameters:
+    # El launch interpreta esta política; no crea otro nodo.
+    active_controllers:
+      - joint_state_broadcaster
+      - posture_controller
+      - head_controller
+      - left_arm_controller
+      - right_arm_controller
+    inactive_controllers: []
+    # Los controladores declarados fuera de ambas listas no se cargan al arrancar.
+
 controller_manager:
   ros__parameters:
     use_sim_time: true
@@ -8,6 +20,10 @@ controller_manager:
     posture_controller:
       type: joint_trajectory_controller/JointTrajectoryController
     head_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+    left_arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+    right_arm_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
 joint_state_broadcaster:
@@ -29,6 +45,26 @@ head_controller:
   ros__parameters:
     use_sim_time: true
     joints: [HeadYaw, HeadPitch]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    allow_partial_joints_goal: false
+    interpolate_from_desired_state: false
+    set_last_command_interface_value_as_state_on_activation: false
+
+left_arm_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints: [LShoulderPitch, LShoulderRoll, LElbowYaw, LElbowRoll, LWristYaw]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    allow_partial_joints_goal: false
+    interpolate_from_desired_state: false
+    set_last_command_interface_value_as_state_on_activation: false
+
+right_arm_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints: [RShoulderPitch, RShoulderRoll, RElbowYaw, RElbowRoll, RWristYaw]
     command_interfaces: [position]
     state_interfaces: [position, velocity]
     allow_partial_joints_goal: false

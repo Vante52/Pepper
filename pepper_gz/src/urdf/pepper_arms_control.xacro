@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="pepper_arm_control" params="prefix initial_positions">
+    <xacro:pepper_position_joint name="${prefix}ShoulderPitch"
+      initial_position="${initial_positions[prefix + 'ShoulderPitch']}"/>
+    <xacro:pepper_position_joint name="${prefix}ShoulderRoll"
+      initial_position="${initial_positions[prefix + 'ShoulderRoll']}"/>
+    <xacro:pepper_position_joint name="${prefix}ElbowYaw"
+      initial_position="${initial_positions[prefix + 'ElbowYaw']}"/>
+    <xacro:pepper_position_joint name="${prefix}ElbowRoll"
+      initial_position="${initial_positions[prefix + 'ElbowRoll']}"/>
+    <xacro:pepper_position_joint name="${prefix}WristYaw"
+      initial_position="${initial_positions[prefix + 'WristYaw']}"/>
+  </xacro:macro>
+</robot>

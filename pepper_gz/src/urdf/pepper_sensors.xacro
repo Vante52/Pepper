@@ -8,7 +8,7 @@
       <sensor name="${sensor['name']}" type="${sensor['type']}">
         <always_on>true</always_on>
         <update_rate>${sensor['update_rate']}</update_rate>
-        <visualize>false</visualize>
+        <visualize>true</visualize>
         <topic>${sensor['topic']}</topic>
         <camera name="${sensor['name']}">
           <camera_info_topic>${sensor['info_topic']}</camera_info_topic>

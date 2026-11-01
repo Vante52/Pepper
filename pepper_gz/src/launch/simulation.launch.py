@@ -1,5 +1,6 @@
 """Inicia Pepper, sus sensores y ros2_control con Bullet Featherstone."""
 
+from functools import partial
 import math
 import os
 from pathlib import Path
@@ -17,6 +18,7 @@ from launch.events import Shutdown
 from launch.logging import get_logger
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from pepper_gz.control_config import validate_control
 import rclpy
 from rclpy.context import Context
 from rclpy.executors import SingleThreadedExecutor
@@ -39,7 +41,7 @@ def shutdown_with_error(message):
 
 
 def guard_instances(
-    start_gazebo, publish_tf, start_bridge, start_controllers, spawn_robot, bridges, world_name,
+    start_gazebo, publish_tf, start_bridge, startup_controllers, spawn_robot, bridges, world_name,
 ):
     """Detecta servidores y publicadores activos en la partición y dominio actuales."""
     result = subprocess.run(
@@ -68,14 +70,16 @@ def guard_instances(
         conflicts = [topic for topic in topics if node.count_publishers(topic)]
         if publish_tf and any('robot_state_publisher' in name for name in node.get_node_names()):
             conflicts.append('robot_state_publisher')
-        if start_controllers and node.count_publishers('/joint_states'):
-            conflicts.append('/joint_states: use start_controllers:=false para reutilizarlo')
+        existing_nodes = set(node.get_node_names())
+        for name in startup_controllers:
+            if name in existing_nodes:
+                conflicts.append(f'{name}: use start_controllers:=false para reutilizarlo')
         if spawn_robot and 'controller_manager' in node.get_node_names():
             conflicts.append('controller_manager: ya existe un robot con control en este dominio')
         if conflicts:
             raise RuntimeError(
-                'Publicadores ya activos: ' + ', '.join(conflicts)
-                + '. Reutilice publish_tf:=false o start_bridge:=false según corresponda.',
+                'Componentes ROS ya activos: ' + ', '.join(conflicts)
+                + '. Desactive su arranque con los argumentos correspondientes.',
             )
     finally:
         executor.shutdown()
@@ -146,44 +150,6 @@ def resolve_world(value, share):
     return path, worlds[0].get('name')
 
 
-def validate_control(robot, controllers):
-    """Verifica interfaces, postura neutral y coherencia con los límites originales."""
-    commanded = {'HipRoll', 'HipPitch', 'KneePitch', 'HeadYaw', 'HeadPitch'}
-    systems = robot.findall('ros2_control')
-    if len(systems) != 1 or systems[0].get('type') != 'system':
-        raise ValueError('Debe existir un único ros2_control de tipo system')
-    system = systems[0]
-    if system.findtext('hardware/plugin') != 'gz_ros2_control/GazeboSimSystem':
-        raise ValueError('Plugin de hardware incorrecto')
-    joints = {joint.get('name'): joint for joint in robot.findall('joint')}
-    registered = {joint.get('name'): joint for joint in system.findall('joint')}
-    independent = {name for name, joint in joints.items()
-                   if joint.get('type') != 'fixed' and joint.find('mimic') is None}
-    if set(registered) != independent:
-        raise ValueError('Deben registrarse estados de todas las articulaciones independientes')
-    actual = {name for name, joint in registered.items() if joint.findall('command_interface')}
-    if actual != commanded:
-        raise ValueError('Solo cadera, rodilla y cabeza deben tener interfaces de comando')
-    for name, joint in registered.items():
-        states = {state.get('name') for state in joint.findall('state_interface')}
-        if states != {'position', 'velocity'}:
-            raise ValueError(f'Estados incorrectos: {name}')
-        if name in commanded:
-            if [c.get('name') for c in joint.findall('command_interface')] != ['position']:
-                raise ValueError(f'Comandos incorrectos: {name}')
-            initial = float(joint.findtext('state_interface[@name="position"]/param'))
-            limit = joints[name].find('limit')
-            if not math.isfinite(initial) or not (
-                    float(limit.get('lower')) <= initial <= float(limit.get('upper'))):
-                raise ValueError(f'Posición inicial fuera de los límites originales: {name}')
-    for name, expected in [('posture_controller', commanded - {'HeadYaw', 'HeadPitch'}),
-                           ('head_controller', {'HeadYaw', 'HeadPitch'})]:
-        params = controllers[name]['ros__parameters']
-        if (set(params['joints']) != expected or params['command_interfaces'] != ['position']
-                or params['state_interfaces'] != ['position', 'velocity']):
-            raise ValueError(f'Configuración incoherente: {name}')
-
-
 def launch_setup(context):
     """Prepara el SDF y las instancias solicitadas."""
     share = Path(get_package_share_directory('pepper_gz'))
@@ -195,6 +161,7 @@ def launch_setup(context):
     config_path = Path(LaunchConfiguration('sensors_config').perform(context))
     bridge_path = Path(LaunchConfiguration('bridge_config').perform(context))
     controllers_path = Path(LaunchConfiguration('controllers_config').perform(context))
+    initial_positions_path = Path(LaunchConfiguration('initial_positions_config').perform(context))
     config = yaml.safe_load(config_path.read_text())
     bridges = yaml.safe_load(bridge_path.read_text())
     for bridge in bridges:
@@ -202,18 +169,22 @@ def launch_setup(context):
             bridge['gz_topic_name'] = f'/world/{world_name}/clock'
     robot_xml = xacro.process_file(
         str(share / 'urdf' / 'pepper_gz.xacro'),
-        mappings={'sensors_config': str(config_path), 'controllers_config': str(controllers_path)},
+        mappings={
+            'sensors_config': str(config_path), 'controllers_config': str(controllers_path),
+            'initial_positions_config': str(initial_positions_path),
+        },
     ).toxml()
     robot = ET.fromstring(robot_xml)
     validate_model(robot, config, bridges, world_name)
-    validate_control(robot, yaml.safe_load(controllers_path.read_text()))
+    control_plan = validate_control(robot, yaml.safe_load(controllers_path.read_text()))
     start_gazebo = flag(context, 'start_gazebo')
     publish_tf = flag(context, 'publish_tf')
     start_bridge = flag(context, 'start_bridge')
     start_controllers = flag(context, 'start_controllers')
     spawn_robot = flag(context, 'spawn_robot')
     guard_instances(
-        start_gazebo, publish_tf, start_bridge, start_controllers, spawn_robot,
+        start_gazebo, publish_tf, start_bridge,
+        control_plan.active + control_plan.inactive if start_controllers else (), spawn_robot,
         bridges, world_name,
     )
     directory = Path(tempfile.mkdtemp(prefix='pepper_gz_'))
@@ -256,7 +227,9 @@ def launch_setup(context):
         on_shutdown=[OpaqueFunction(function=cleanup)],
     )))
     if start_gazebo:
-        command = ['gz', 'sim', '-r', '-v', '3']
+        command = ['gz', 'sim', '-v', '3']
+        if not flag(context, 'paused'):
+            command.append('-r')
         if not flag(context, 'gui'):
             command += ['-s', '--headless-rendering']
         command += [str(world_path)]
@@ -282,48 +255,41 @@ def launch_setup(context):
         '--controller-manager-timeout', '45', '--service-call-timeout', '10',
         '--switch-timeout', '10',
     ]
-    broadcaster = Node(
-        package='controller_manager', executable='spawner', name='pepper_state_spawner',
-        output='screen', arguments=['joint_state_broadcaster', *spawner_arguments],
-        parameters=[{'use_sim_time': True}],
-    )
-    motion = Node(
-        package='controller_manager', executable='spawner', name='pepper_motion_spawner',
-        output='screen',
-        arguments=['posture_controller', 'head_controller', '--activate-as-group',
-                   *spawner_arguments],
-        parameters=[{'use_sim_time': True}],
-    )
-
-    def broadcast_started(event, _context):
-        if _context.is_shutdown:
-            return []
-        if event.returncode:
-            return shutdown_with_error(
-                'No se activó joint_state_broadcaster. Revise los errores de '
-                'gz_ros2_control, el YAML y /controller_manager.',
-            )
-        return [motion]
-
-    def controllers_started(event, _context):
-        if _context.is_shutdown:
-            return []
-        if event.returncode:
-            return shutdown_with_error(
-                'Falló la activación de posture_controller o head_controller. '
-                'Revise las interfaces position y los errores del spawner.',
-            )
-        return [LogInfo(msg='Controladores activos: joint_state_broadcaster, '
-                        'posture_controller y head_controller')]
-
+    groups = []
+    spawners = []
     if start_controllers:
-        actions += [
-            RegisterEventHandler(OnProcessExit(
-                target_action=broadcaster, on_exit=broadcast_started,
-            )),
-            RegisterEventHandler(OnProcessExit(target_action=motion, on_exit=controllers_started)),
-        ]
-    after_spawn = [broadcaster] if start_controllers else []
+        for state, names in [('active', control_plan.active), ('inactive', control_plan.inactive)]:
+            if not names:
+                continue
+            groups.append((state, names))
+            options = ['--activate-as-group'] if state == 'active' else ['--inactive']
+            spawners.append(Node(
+                package='controller_manager', executable='spawner',
+                name=f'pepper_{state}_controller_spawner', output='screen',
+                arguments=[*names, *options, *spawner_arguments],
+                parameters=[{'use_sim_time': True}],
+            ))
+
+    def group_started(event, _context, index):
+        if _context.is_shutdown:
+            return []
+        state, names = groups[index]
+        selected = ', '.join(names)
+        if event.returncode:
+            return shutdown_with_error(
+                f'Falló el arranque en estado {state} de: {selected}. Revise el plugin, '
+                'los parámetros de esos controladores y sus interfaces en /controller_manager.',
+            )
+        result = [LogInfo(msg=f'Controladores en estado {state}: {selected}')]
+        if index + 1 < len(spawners):
+            result.append(spawners[index + 1])
+        return result
+
+    for index, spawner in enumerate(spawners):
+        actions.append(RegisterEventHandler(OnProcessExit(
+            target_action=spawner, on_exit=partial(group_started, index=index),
+        )))
+    after_spawn = spawners[:1]
     if spawn_robot:
         z = LaunchConfiguration('spawn_z').perform(context)
         if not math.isfinite(float(z)):
@@ -368,6 +334,10 @@ def generate_launch_description():
     share = Path(get_package_share_directory('pepper_gz'))
     return LaunchDescription([
         DeclareLaunchArgument('gui', default_value='true'),
+        DeclareLaunchArgument(
+            'paused', default_value='true',
+            description='Iniciar en pausa; false ejecuta la simulación sin pulsar Play.',
+        ),
         DeclareLaunchArgument('start_gazebo', default_value='true'),
         DeclareLaunchArgument('spawn_robot', default_value='true'),
         DeclareLaunchArgument('publish_tf', default_value='true'),
@@ -386,6 +356,10 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'controllers_config', default_value=str(share / 'config/controllers.yaml'),
+        ),
+        DeclareLaunchArgument(
+            'initial_positions_config', default_value=str(share / 'config/initial_positions.yaml'),
+            description='Posiciones iniciales de las articulaciones actuadas, en radianes.',
         ),
         OpaqueFunction(function=launch_setup),
     ])

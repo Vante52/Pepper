@@ -1,15 +1,21 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:arg name="controllers_config" default="$(find pepper_gz)/config/controllers.yaml"/>
+  <xacro:arg name="initial_positions_config"
+             default="$(find pepper_gz)/config/initial_positions.yaml"/>
+  <xacro:property name="control_initial_positions"
+    value="${xacro.load_yaml('$(arg initial_positions_config)')['initial_positions']}"/>
+  <xacro:include filename="pepper_arms_control.xacro"/>
 
-  <xacro:macro name="pepper_position_joint" params="name">
+  <xacro:macro name="pepper_position_joint"
+               params="name initial_position:=0.0 initial_velocity:=0.0">
     <joint name="${name}">
       <command_interface name="position"/>
       <state_interface name="position">
-        <param name="initial_value">0.0</param>
+        <param name="initial_value">${initial_position}</param>
       </state_interface>
       <state_interface name="velocity">
-        <param name="initial_value">0.0</param>
+        <param name="initial_value">${initial_velocity}</param>
       </state_interface>
     </joint>
   </xacro:macro>
@@ -25,23 +31,21 @@
     <hardware>
       <plugin>gz_ros2_control/GazeboSimSystem</plugin>
     </hardware>
-    <xacro:pepper_position_joint name="HipRoll"/>
-    <xacro:pepper_position_joint name="HipPitch"/>
-    <xacro:pepper_position_joint name="KneePitch"/>
-    <xacro:pepper_position_joint name="HeadYaw"/>
-    <xacro:pepper_position_joint name="HeadPitch"/>
+    <xacro:pepper_position_joint name="HipRoll"
+      initial_position="${control_initial_positions['HipRoll']}"/>
+    <xacro:pepper_position_joint name="HipPitch"
+      initial_position="${control_initial_positions['HipPitch']}"/>
+    <xacro:pepper_position_joint name="KneePitch"
+      initial_position="${control_initial_positions['KneePitch']}"/>
+    <xacro:pepper_position_joint name="HeadYaw"
+      initial_position="${control_initial_positions['HeadYaw']}"/>
+    <xacro:pepper_position_joint name="HeadPitch"
+      initial_position="${control_initial_positions['HeadPitch']}"/>
 
-    <xacro:pepper_passive_joint name="LShoulderPitch"/>
-    <xacro:pepper_passive_joint name="LShoulderRoll"/>
-    <xacro:pepper_passive_joint name="LElbowYaw"/>
-    <xacro:pepper_passive_joint name="LElbowRoll"/>
-    <xacro:pepper_passive_joint name="LWristYaw"/>
+    <xacro:pepper_arm_control prefix="L" initial_positions="${control_initial_positions}"/>
+    <xacro:pepper_arm_control prefix="R" initial_positions="${control_initial_positions}"/>
+
     <xacro:pepper_passive_joint name="LHand"/>
-    <xacro:pepper_passive_joint name="RShoulderPitch"/>
-    <xacro:pepper_passive_joint name="RShoulderRoll"/>
-    <xacro:pepper_passive_joint name="RElbowYaw"/>
-    <xacro:pepper_passive_joint name="RElbowRoll"/>
-    <xacro:pepper_passive_joint name="RWristYaw"/>
     <xacro:pepper_passive_joint name="RHand"/>
     <xacro:pepper_passive_joint name="WheelFL"/>
     <xacro:pepper_passive_joint name="WheelFR"/>
