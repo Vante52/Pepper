@@ -1,0 +1,40 @@
+# Perfiles para Pepper. Este archivo NO pertenece al LLM.
+# Las posiciones son radianes y deben probarse en Gazebo antes de usar hardware.
+version: 1
+skills:
+  wave_right:
+    description: "Saludar al público con el brazo derecho"
+    backend: follow_joint_trajectory
+    action: /right_arm_controller/follow_joint_trajectory
+    controller: right_arm_controller
+    controller_manager: /controller_manager
+    joint_states_topic: /joint_states
+    joints: [RShoulderPitch, RShoulderRoll, RElbowYaw, RElbowRoll, RWristYaw]
+    # Límites consultados del URDF pepper_description actual.
+    limits:
+      RShoulderPitch: [-2.08567, 2.08567]
+      RShoulderRoll: [-1.56207, -0.00872665]
+      RElbowYaw: [-2.08567, 2.08567]
+      RElbowRoll: [0.00872665, 1.56207]
+      RWristYaw: [-1.82387, 1.82387]
+    goal_tolerance_rad: 0.15
+    goal_time_tolerance_sec: 2.0
+    # Verificación mediante estados medidos, no solo el resultado de la acción.
+    min_motion_rad: 0.1
+    state_timeout_sec: 3.0
+    execution_timeout_sec: 30.0
+    waypoints:
+      # Elevar el antebrazo y oscilar el codo; regresar a la postura inicial.
+      # Perfil de simulación, sin planificación de colisiones.
+      - time: 2.5
+        positions: [0.1, -0.35, 1.4, 1.2, 0.0]
+      - time: 3.1
+        positions: [0.1, -0.35, 1.1, 1.2, -0.3]
+      - time: 3.7
+        positions: [0.1, -0.35, 1.7, 1.2, 0.3]
+      - time: 4.3
+        positions: [0.1, -0.35, 1.1, 1.2, -0.3]
+      - time: 4.9
+        positions: [0.1, -0.35, 1.7, 1.2, 0.3]
+      - time: 6.5
+        positions: [1.5, -0.15, 0.0, 0.15, 0.0]
