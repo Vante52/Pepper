@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 import pytest
 
 from robot_skill_bridge.catalog import load_catalog
+from robot_skill_bridge.perception import parse_perception
 from robot_skill_bridge.trajectory_profile import parse_trajectory
 
 import yaml
@@ -18,9 +19,10 @@ import yaml
 def pytest_generate_tests(metafunc):
     if 'configured_skill' in metafunc.fixturenames:
         catalog = load_catalog(metafunc.config.getoption('--skills-config'), {
-            'follow_joint_trajectory': parse_trajectory,
+            'follow_joint_trajectory': parse_trajectory, 'perception': parse_perception,
         })
-        metafunc.parametrize('configured_skill', list(catalog.values()), ids=list(catalog))
+        motions = [s for s in catalog.values() if s.backend == 'follow_joint_trajectory']
+        metafunc.parametrize('configured_skill', motions, ids=[s.name for s in motions])
 
 
 def test_profile_matches_installed_pepper_description_and_controllers():
@@ -33,9 +35,13 @@ def test_profile_matches_installed_pepper_description_and_controllers():
         pytest.skip('Se necesita el overlay de pepper_gz para comprobar el perfil Pepper')
     robot = ET.fromstring(xacro.process_file(str(share / 'urdf/pepper_gz.xacro')).toxml())
     config = Path(__file__).resolve().parents[1] / 'config/pepper_skills.yaml'
-    catalog = load_catalog(config, {'follow_joint_trajectory': parse_trajectory})
+    catalog = load_catalog(config, {
+        'follow_joint_trajectory': parse_trajectory, 'perception': parse_perception,
+    })
     controllers = yaml.safe_load((share / 'config/controllers.yaml').read_text())
     for skill in catalog.values():
+        if skill.backend != 'follow_joint_trajectory':
+            continue
         profile = skill.profile
         assert list(profile.joints) == controllers[profile.controller]['ros__parameters']['joints']
         for name in profile.joints:

@@ -9,6 +9,7 @@ from urllib.request import Request, urlopen
 
 from robot_skill_bridge.catalog import load_catalog
 from robot_skill_bridge.http_api import create_server
+from robot_skill_bridge.perception import parse_perception
 from robot_skill_bridge.trajectory_profile import parse_trajectory
 
 CONFIG = Path(__file__).resolve().parents[1] / 'config' / 'pepper_skills.yaml'
@@ -26,7 +27,9 @@ class FakeBackend:
 class HttpContractTests(unittest.TestCase):
     def setUp(self):
         self.fake = FakeBackend()
-        catalog = load_catalog(CONFIG, {'follow_joint_trajectory': parse_trajectory})
+        catalog = load_catalog(CONFIG, {
+            'follow_joint_trajectory': parse_trajectory, 'perception': parse_perception,
+        })
         self.server = create_server('127.0.0.1', 0, catalog, self.fake)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -96,3 +99,26 @@ class HttpContractTests(unittest.TestCase):
             release.set()
             thread.join(3.)
         self.assertEqual(results[0][0], 200)
+
+    def test_perception_can_be_read_while_a_motion_is_running(self):
+        entered, release = threading.Event(), threading.Event()
+
+        def execute(skill):
+            if skill.kind == 'action':
+                entered.set()
+                release.wait(2.)
+            return 200, {'ok': True, 'status': 'observed' if skill.kind == 'perception'
+                         else 'succeeded'}
+
+        self.fake.execute = execute
+        thread = threading.Thread(target=lambda: self.req(
+            '/v1/skills/execute', {'skill': 'wave_right'},
+        ))
+        thread.start()
+        try:
+            self.assertTrue(entered.wait(1.))
+            status, result = self.req('/v1/skills/execute', {'skill': 'look_front'})
+            self.assertEqual((status, result['status']), (200, 'observed'))
+        finally:
+            release.set()
+            thread.join(3.)

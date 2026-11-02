@@ -1,6 +1,12 @@
 # Perfiles para Pepper. Este archivo NO pertenece al LLM.
 # Las posiciones son radianes y deben probarse en Gazebo antes de usar hardware.
 version: 1
+perception_providers:
+  front_camera:
+    type: ros2_camera
+    topic: /pepper/camera/top/image_raw
+    timeout_sec: 3.0
+    max_dimension: 640
 skills:
   wave_right:
     description: "Saludar al público con el brazo derecho"
@@ -18,23 +24,28 @@ skills:
       RElbowRoll: [0.00872665, 1.56207]
       RWristYaw: [-1.82387, 1.82387]
     goal_tolerance_rad: 0.15
-    goal_time_tolerance_sec: 2.0
+    goal_time_tolerance_sec: 0.5
     # Verificación mediante estados medidos, no solo el resultado de la acción.
     min_motion_rad: 0.1
     state_timeout_sec: 3.0
     execution_timeout_sec: 30.0
     waypoints:
-      # Elevar el antebrazo y oscilar el codo; regresar a la postura inicial.
+      # Gesto de 4.5 s, más 0.5 s de margen final, en tiempo de simulación.
       # Perfil de simulación, sin planificación de colisiones.
-      - time: 2.5
+      - time: 1.5
         positions: [0.1, -0.35, 1.4, 1.2, 0.0]
-      - time: 3.1
+      - time: 2.0
         positions: [0.1, -0.35, 1.1, 1.2, -0.3]
-      - time: 3.7
+      - time: 2.5
         positions: [0.1, -0.35, 1.7, 1.2, 0.3]
-      - time: 4.3
+      - time: 3.0
         positions: [0.1, -0.35, 1.1, 1.2, -0.3]
-      - time: 4.9
+      - time: 3.5
         positions: [0.1, -0.35, 1.7, 1.2, 0.3]
-      - time: 6.5
+      - time: 4.5
         positions: [1.5, -0.15, 0.0, 0.15, 0.0]
+  look_front:
+    description: "Obtener una imagen actual de lo que hay delante para describir la escena"
+    kind: perception
+    backend: perception
+    provider: front_camera

@@ -28,6 +28,8 @@ class TrajectoryProfile:
 
 
 def parse_trajectory(name, data):
+    if data.get('kind', 'action') != 'action':
+        raise ValueError(f'{name}: una trayectoria debe tener kind=action')
     action = data.get('action')
     if not isinstance(action, str) or not action.startswith('/'):
         raise ValueError(f'{name}: action debe ser un nombre ROS absoluto')

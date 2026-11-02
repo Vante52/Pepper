@@ -14,6 +14,7 @@ class Skill:
     description: str
     backend: str
     profile: Any
+    kind: str = 'action'
 
 
 class SkillBackend(Protocol):
@@ -50,7 +51,10 @@ def load_catalog(path, validators):
         if not isinstance(backend, str) or backend not in validators:
             raise ValueError(f'{name}: backend no registrado: {backend!r}')
         profile = validators[backend](name, data)
-        catalog[name] = Skill(name, description, backend, profile)
+        kind = data.get('kind', 'action')
+        if kind not in ('action', 'perception'):
+            raise ValueError(f'{name}: kind debe ser action o perception')
+        catalog[name] = Skill(name, description, backend, profile, kind)
     return catalog
 
 

@@ -11,7 +11,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/config', ['config/pepper_skills.yaml']),
     ],
-    install_requires=['setuptools', 'PyYAML'],
+    install_requires=['setuptools', 'PyYAML', 'Pillow'],
     tests_require=['pytest'],
     zip_safe=True,
     maintainer='pepper-project',

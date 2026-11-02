@@ -10,6 +10,8 @@ from rclpy.node import Node
 
 from .catalog import BackendRouter, load_catalog
 from .http_api import create_server
+from .perception import PerceptionBackend, parse_perception
+from .perception_factory import create_perception_providers
 from .trajectory_backend import TrajectoryBackend
 from .trajectory_profile import parse_trajectory
 
@@ -32,6 +34,7 @@ def main(args=None):
         node = SkillBridgeNode()
         catalog = load_catalog(node.get_parameter('config_file').value, {
             'follow_joint_trajectory': parse_trajectory,
+            'perception': parse_perception,
         })
         host = node.get_parameter('bind_host').value
         port = node.get_parameter('port').value
@@ -39,7 +42,14 @@ def main(args=None):
             raise ValueError('bind_host o port inválido')
         if host not in ('127.0.0.1', 'localhost'):
             raise ValueError('MVP local: bind_host debe ser loopback (sin autenticación)')
-        backend = BackendRouter({'follow_joint_trajectory': TrajectoryBackend(node)})
+        providers = create_perception_providers(node, node.get_parameter('config_file').value)
+        for skill in catalog.values():
+            if skill.backend == 'perception' and skill.profile not in providers:
+                raise ValueError(f'{skill.name}: proveedor no configurado: {skill.profile}')
+        backend = BackendRouter({
+            'follow_joint_trajectory': TrajectoryBackend(node),
+            'perception': PerceptionBackend(providers),
+        })
         server = create_server(host, port, catalog, backend)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()

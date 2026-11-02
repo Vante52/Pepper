@@ -12,6 +12,7 @@ pytest.importorskip('rclpy')
 GoalStatus = pytest.importorskip('action_msgs.msg').GoalStatus
 
 from robot_skill_bridge.catalog import load_catalog
+from robot_skill_bridge.perception import parse_perception
 from robot_skill_bridge.trajectory_backend import TrajectoryBackend, to_duration
 from robot_skill_bridge.trajectory_profile import parse_trajectory
 
@@ -26,7 +27,9 @@ def resolved(value):
 
 @pytest.fixture
 def skill():
-    return load_catalog(CONFIG, {'follow_joint_trajectory': parse_trajectory})['wave_right']
+    return load_catalog(CONFIG, {
+        'follow_joint_trajectory': parse_trajectory, 'perception': parse_perception,
+    })['wave_right']
 
 
 def action_client(accepted=True, status=GoalStatus.STATUS_SUCCEEDED, error_code=0, pending=False):

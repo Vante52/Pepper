@@ -27,7 +27,7 @@ def create_server(host, port, catalog, backend: SkillBackend):
             if self.path != '/v1/skills':
                 return self._json(404, {'ok': False, 'status': 'not_found'})
             self._json(200, {'ok': True, 'skills': [
-                {'name': skill.name, 'description': skill.description}
+                {'name': skill.name, 'description': skill.description, 'kind': skill.kind}
                 for skill in catalog.values()
             ]})
 
@@ -50,7 +50,8 @@ def create_server(host, port, catalog, backend: SkillBackend):
             if skill is None:
                 return self._json(404, {'ok': False, 'status': 'unknown_skill',
                                         'detail': 'Habilidad no autorizada'})
-            if not busy.acquire(blocking=False):
+            holds_motion_lock = skill.kind == 'action'
+            if holds_motion_lock and not busy.acquire(blocking=False):
                 return self._json(409, {'ok': False, 'status': 'busy',
                                         'detail': 'Otra habilidad está en ejecución'})
             try:
@@ -59,7 +60,8 @@ def create_server(host, port, catalog, backend: SkillBackend):
                 status, result = 500, {'ok': False, 'status': 'bridge_error',
                                        'detail': str(exc)}
             finally:
-                busy.release()
+                if holds_motion_lock:
+                    busy.release()
             self._json(status, result)
 
         def log_message(self, fmt, *args):

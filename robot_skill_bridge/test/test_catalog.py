@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from robot_skill_bridge.catalog import load_catalog
+from robot_skill_bridge.perception import parse_perception
 from robot_skill_bridge.trajectory_profile import parse_trajectory
 
 import yaml
@@ -14,12 +15,14 @@ CONFIG = Path(__file__).resolve().parents[1] / 'config' / 'pepper_skills.yaml'
 
 class CatalogTests(unittest.TestCase):
     def test_valid_pepper_skill(self):
-        catalog = load_catalog(CONFIG, {'follow_joint_trajectory': parse_trajectory})
-        self.assertEqual(set(catalog), {'wave_right'})
+        catalog = load_catalog(CONFIG, {
+            'follow_joint_trajectory': parse_trajectory, 'perception': parse_perception,
+        })
+        self.assertEqual(set(catalog), {'wave_right', 'look_front'})
         skill = catalog['wave_right'].profile
         self.assertEqual(len(skill.joints), 5)
         self.assertEqual(skill.action, '/right_arm_controller/follow_joint_trajectory')
-        self.assertEqual(skill.waypoints[-1].time, 6.5)
+        self.assertLessEqual(skill.waypoints[-1].time + skill.goal_time_tolerance_sec, 5.0)
 
     def _invalid(self, edit):
         data = yaml.safe_load(CONFIG.read_text())
@@ -28,7 +31,9 @@ class CatalogTests(unittest.TestCase):
             path = Path(temp) / 'skills.yaml'
             path.write_text(yaml.safe_dump(data))
             with self.assertRaises(ValueError):
-                load_catalog(path, {'follow_joint_trajectory': parse_trajectory})
+                load_catalog(path, {
+                    'follow_joint_trajectory': parse_trajectory, 'perception': parse_perception,
+                })
 
     def test_rejects_nonexistent_waypoint_joint(self):
         self._invalid(lambda skill: skill['waypoints'][0].update(

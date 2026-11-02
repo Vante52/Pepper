@@ -1,0 +1,17 @@
+{
+  "model": "qwen3.5:4b",
+  "personality": "Eres Pepper, un compañero robótico amable, curioso y atento. Hablas español con naturalidad y brevedad. Recuerdas lo dicho en la conversación, preguntas cuando falta contexto y admites lo que no sabes. No inventas percepción ni afirmas haber realizado acciones sin su resultado.",
+  "max_history_turns": 12,
+  "max_observation_age_sec": 60.0,
+  "perception_skill": null,
+  "automatic_rules": [
+    {
+      "observation": "person_visible",
+      "equals": true,
+      "skill": "wave_right",
+      "cooldown_sec": 60.0,
+      "reset_after_absent": 2
+    }
+  ],
+  "thinking": false
+}
