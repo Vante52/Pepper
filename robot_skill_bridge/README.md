@@ -10,9 +10,10 @@ Conversación + memoria → Qwen2.5 7B → habilidad → HTTP → adaptador ROS 
                        imagen nueva → Qwen3-VL 2B → observaciones → Qwen2.5 7B
 ```
 
-La integración visión–lenguaje–acción es discreta: el modelo reconoce una escena
-y solicita habilidades predefinidas. No genera posiciones articulares ni es una
-política entrenada de control continuo.
+El agente selecciona habilidades con argumentos acotados. Puede combinar observaciones
+y un destino métrico para buscar un objeto y acercarse a él. Los lazos de control
+usan odometría y profundidad; el modelo no genera velocidades de ruedas ni posiciones
+articulares.
 
 ## Arranque
 
@@ -36,7 +37,7 @@ Terminal 2:
 
 ```bash
 source install/setup.bash
-ros2 run robot_skill_bridge skill_bridge --ros-args -p use_sim_time:=true
+ros2 launch robot_skill_bridge skill_bridge.launch.py
 ```
 
 Terminal 3, con Ollama ejecutándose y el modelo instalado:
@@ -64,9 +65,20 @@ imagen explícitamente y omite esa interpretación inicial.
 Un fallo de decisión se muestra y permite seguir escribiendo. Los errores reales
 de adquisición se muestran como `[Percepción: ...]`.
 
+
+El launch del bridge configura `use_sim_time=true` por defecto. Para hardware se
+puede iniciar con `use_sim_time:=false`. El ejecutable `ros2 run` por sí solo conserva
+el valor estándar de ROS 2 (`false`); si se utiliza en simulación hay que pasar
+`--ros-args -p use_sim_time:=true`. Un `clock_mismatch` indica que los timestamps del
+bridge y los sensores u odometría no pertenecen al mismo reloj. El bridge se inicia
+por separado de Gazebo; este launch no duplica la simulación ni los controladores.
+
+La decisión estructurada asocia cada habilidad a su propio esquema de argumentos.
+Los errores de ejecución muestran también su `detail` en la terminal.
+
 ## Percepción
 
-`PerceptionProvider.observe() -> Observation` es el contrato común. No incluye
+`PerceptionProvider.observe() -> Observation` es el contrato común de imágenes. No incluye
 inferencias de personas ni depende del proveedor de IA.
 
 | Implementación | Fuente | Uso |
@@ -79,7 +91,9 @@ El perfil `config/pepper_skills.yaml` registra `look_front`, de tipo
 `perception`, con la cámara `/pepper/camera/top/image_raw`. El adaptador solicita
 un frame nuevo en cada adquisición, convierte a RGB y PNG, conserva el
 `header.frame_id` original y entrega como máximo 640 píxeles en el lado mayor.
-No añade frames ni transforma coordenadas. Usa QoS de datos de sensores.
+La descripción de imágenes no añade frames. El proveedor métrico asociado conserva
+una instantánea de nube, calibración, TF y odometría para localizar regiones
+de esa misma imagen. Usa QoS de datos de sensores.
 
 `captured_at` es la hora real de adquisición del proveedor; `sensor_stamp`
 conserva el tiempo ROS de la imagen. Un archivo no tiene `sensor_stamp`: su
@@ -99,6 +113,156 @@ La respuesta contiene `observation.image_base64`, `media_type`, `captured_at`,
 ni guarda sus bytes en el historial. Si falla la cámara, el agente puede seguir
 conversando, pero debe declarar `person_visible: null`. Una respuesta que afirme
 haber visto algo sin imagen se rechaza.
+
+## Mover la base y aproximarse a objetos
+
+Con la simulación en Play, los controladores activos y el puente iniciado, prueba:
+
+```text
+Avanza medio metro.
+Desplázate 30 centímetros a la izquierda.
+Retrocede un metro.
+Gira 90 grados a la derecha.
+Busca el cono rojo y acércate a él.
+Dirígete hacia la esfera morada.
+Acércate al cilindro azul y quédate a un metro.
+```
+
+| Habilidad | Argumentos | Comprobación |
+| --- | --- | --- |
+| `move_relative` | `distance_m` (0–5), `direction_deg` (−180–180) | Posición y parada por odometría |
+| `turn_relative` | `angle_deg` (−360–360) | Giro acumulado y parada por odometría |
+| `approach_object` | `target` (descripción), `stop_distance_m` (0,6–2; defecto 0,8) | Objetivo visible y distancia por profundidad |
+
+Las direcciones se refieren a la orientación inicial de la base: 0° delante,
+90° izquierda, −90° derecha y 180° atrás. El desplazamiento mantiene esa
+orientación. Los giros positivos son hacia la izquierda. Se usan metros y grados
+en el contrato público, con conversión explícita a radianes en el adaptador.
+
+`approach_object` es una habilidad compuesta del agente, registrada por
+`visual_navigation` en `host_demo/agent_config.json`; no es un backend remoto que
+conozca Ollama. Solo se ofrece al modelo cuando están disponibles las habilidades
+remotas configuradas. Sus nombres se resuelven desde ese mapa. La forma y el
+color del objetivo son texto libre, sin un clasificador limitado a conos.
+
+1. La cámara obtiene una imagen nueva mientras la base está detenida.
+2. El modelo visual devuelve una caja, coincidencia y confianza. El adaptador
+   normaliza las coordenadas al contrato 0–1 de las habilidades.
+   Si hay varios objetos indistinguibles o dudas, no se mueve.
+3. `locate_target` usa el `observation_id` de esa imagen. Transforma los XYZ de la
+   nube desde su frame real mediante TF, los proyecta en la cámara RGB con
+   `CameraInfo` y estima la posición de la región en el frame de la base.
+4. Calcula la distancia y el destino completos antes de moverse. Para un punto
+   medido `(x,y)`, obtiene `d=hypot(x,y)` y una dirección `atan2(y,x)`. Si la separación
+   deseada es `s`, el destino relativo es `(x,y) * max(0,(d-s)/d)`.
+5. Envía **un único** `move_relative` con distancia `max(0,d-s)` y la dirección
+   calculada. La base omnidireccional conserva su orientación y el adaptador ROS 2
+   alcanza el punto con realimentación de odometría.
+6. Al terminar, vuelve a medir el objeto para comprobar la separación. Esta
+   comprobación no envía movimientos adicionales. Una diferencia fuera de tolerancia
+   se informa como `verification_failed`; no se oculta ni se corrige automáticamente.
+
+Por ejemplo: si el objeto se mide a 3,2 m y se pide quedar a 0,8 m, se envía un
+solo desplazamiento de 2,4 m. El modelo visual únicamente identifica la región;
+la distancia procede de los sensores y el cálculo se realiza en código.
+La terminal muestra `[Movimiento calculado: ...]` antes de enviar el comando.
+El resultado incluye `plan`, el destino XY, el comando enviado y `motion` con
+las mediciones del ejecutor.
+
+Si inicialmente no ve el objeto, busca con giros de 45° hasta completar como
+máximo una vuelta. Una vez localizado, calcula el destino completo y ejecuta
+un desplazamiento. Los límites de 24 observaciones de búsqueda y 5 m de recorrido,
+junto con un presupuesto de 600 s reales reevaluado entre operaciones, están en
+`visual_navigation`. Si el destino excede ese recorrido, se rechaza entero.
+`goal_tolerance_m: 0.08` configura la tolerancia de la comprobación final por
+profundidad. `step_distance_m` ya no interviene en la aproximación.
+
+Las órdenes de distancia y las conversaciones normales no adquieren imágenes.
+La búsqueda visual usa Qwen3-VL únicamente cuando necesita observar; no hace una
+inferencia conversacional durante el desplazamiento ni al terminar. La respuesta final
+se construye desde el resultado de ejecución. `--watch` conserva las reglas de
+observación automática y no inicia aproximaciones por su cuenta.
+
+Para probar desplazamientos sin IA:
+
+```bash
+python3 src/robot_skill_bridge/host_demo/demo_ollama.py --skill move_relative \
+  --parameters '{"distance_m":0.25,"direction_deg":0}'
+python3 src/robot_skill_bridge/host_demo/demo_ollama.py --skill turn_relative \
+  --parameters '{"angle_deg":45}'
+curl -sS http://127.0.0.1:8765/v1/skills/cancel -X POST
+```
+
+El adaptador publica `Twist` en `/cmd_vel`, pasando por el guard existente y sus
+límites comunes de ruedas. Solo crea el publicador mientras ejecuta una habilidad.
+Cierra otros teleops: dos emisores simultáneos detienen la base. Una pausa del
+reloj, pérdida de odometría, falta de avance, cancelación o timeout provoca una
+orden cero. El éxito requiere posición dentro de 1,5 cm, orientación dentro de
+0,025 rad y velocidad prácticamente cero durante 0,2 s de simulación.
+El perfil usa 0,15 m/s y 0,5 rad/s, dentro del intervalo probado en la calibración
+de la base. La tolerancia de odometría no garantiza ese error en posición física.
+
+La distancia final se mide desde el origen de la base hasta la región observada
+del objeto; no es el espacio libre entre sus carcasas.
+
+La aproximación necesita imagen y nube con tiempos separados como máximo 0,1 s,
+calibración RGB rectificada sin distorsión y TF disponible. El perfil de suelo plano descarta puntos fuera del intervalo de altura
+`target_min_z_m: -0.45` a `target_max_z_m: 1.5`, expresado en la base situada en
+la cadera; así evita interpretar el suelo como un objeto. Cambia este intervalo
+si cambias el frame de referencia o la escena. La nube de Gazebo
+actual usa `CameraDepth_frame`; sus XYZ se transforman realmente antes de
+proyectarlos en `CameraTop_optical_frame`. No se supone que profundidad y RGB
+compartan resolución ni centro óptico. Se conservan hasta cuatro contextos
+métricos durante 60 s. Si la base cambia de pose durante el análisis, el contexto
+se invalida. Una imagen de archivo puede describirse, pero no autoriza una
+aproximación métrica.
+
+El formato visual es `bbox_2d=[x_min,y_min,x_max,y_max]`, con
+`coordinate_scale: 1000` para el modelo actual, siguiendo el
+[ejemplo oficial de grounding de Qwen3-VL](https://github.com/QwenLM/Qwen3-VL/blob/main/cookbooks/2d_grounding.ipynb).
+Otro proveedor puede usar otra escala configurada; el bridge siempre recibe
+coordenadas normalizadas 0–1. La confianza declarada por el modelo es un filtro
+configurable, no una probabilidad calibrada ni una garantía de reconocimiento.
+
+Este es control local en un área despejada. No incluye mapa, planificación de
+trayectorias ni evitación de obstáculos; la cámara de profundidad tiene un campo
+visible limitado. Para desplazarse por habitaciones con obstáculos, el backend
+de aproximación deberá delegar el objetivo a navegación, por ejemplo Nav2.
+
+### Escena de prueba
+
+El paquete incluye un cono rojo, un cilindro azul y una esfera morada en un soporte.
+Después de compilar, prepara los recursos **antes de iniciar Gazebo**:
+
+```bash
+source install/setup.bash
+SKILL_SHARE=$(ros2 pkg prefix --share robot_skill_bridge)
+export GZ_SIM_RESOURCE_PATH="$SKILL_SHARE/examples:${GZ_SIM_RESOURCE_PATH:-}"
+ros2 launch pepper_gz simulation.launch.py paused:=false
+```
+
+En otra terminal del mismo workspace:
+
+```bash
+source install/setup.bash
+SKILL_SHARE=$(ros2 pkg prefix --share robot_skill_bridge)
+ros2 run ros_gz_sim create -world minimal_world \
+  -file "$SKILL_SHARE/examples/visual_targets/model.sdf"
+ros2 launch robot_skill_bridge skill_bridge.launch.py
+```
+
+Inicia después la demo conversacional en una tercera terminal. Las posiciones de
+los objetos solo pertenecen a la escena: el agente y el bridge no las consultan
+ni usan los nombres de las entidades de Gazebo para localizar objetivos.
+
+En las pruebas iniciales de aproximación por segmentos del 6 de noviembre de 2026, el avance de 25 cm y el desplazamiento
+lateral de 20 cm terminaron con errores de odometría de 1,47 y 1,48 cm.
+La aproximación visual terminó a 0,819 m del cono y 0,836 m de la esfera para una
+consigna de 0,8 m. El primer recorrido incluyó búsqueda y el segundo corrección
+de orientación. Las mediciones y resultados de cada paso están en
+[`examples/validation_results.json`](examples/validation_results.json), como registro histórico del modo por segmentos, con sus
+límites de interpretación. No validan el modo de destino único. No equivalen a una evaluación estadística del modelo
+visual ni a una medición independiente de precisión física.
 
 ## Saludar al ver una persona
 
@@ -213,16 +377,21 @@ no se repite la ejecución de una habilidad para corregir su respuesta.
   Gazebo, Pepper ni Ollama. Los adaptadores se inyectan desde `main.py`.
 - `perception.py`: observación, proveedor y backend de adquisición. La detección
   semántica corresponde al agente, no a este contrato.
-- `ros2_camera_provider.py`: único adaptador de percepción que importa ROS 2.
+- `ros2_camera_provider.py` y `ros2_target_provider.py`: adaptadores ROS 2 de
+  imagen y localización métrica. `TargetProvider.locate()` permite sustituir
+  la implementación sin introducir ROS en el agente.
 - `trajectory_backend.py`: ejecuta `FollowJointTrajectory`, exige el controlador
   activo y verifica movimiento y posición final con `/joint_states`.
 - `config/pepper_skills.yaml`: tópicos, acciones, articulaciones, límites y
   trayectorias específicos del robot.
 - `host_demo/`: agente, memoria, política reactiva y adaptadores HTTP/Ollama.
 
-`GET /v1/skills` publica `name`, `description` y `kind` (`action` o `perception`).
-`POST /v1/skills/execute` sigue aceptando exclusivamente `{"skill":"nombre"}`.
-No recibe trayectorias ni imágenes del LLM. Las acciones se serializan; consultar
+`GET /v1/skills` publica `name`, `description`, `kind` y el esquema `parameters`.
+`POST /v1/skills/execute` conserva `{"skill":"nombre"}` para habilidades sin
+argumentos y admite adicionalmente `{"skill":"nombre","parameters":{...}}`.
+El backend devuelve `SkillResult`; exclusivamente el adaptador HTTP elige el código
+de respuesta. `POST /v1/skills/cancel` solicita cancelar el movimiento actual.
+No recibe trayectorias ni velocidades articulares del LLM. Las acciones se serializan; consultar
 percepción no ocupa el bloqueo de movimiento. El servidor escucha en loopback.
 
 Para probar el movimiento sin IA:

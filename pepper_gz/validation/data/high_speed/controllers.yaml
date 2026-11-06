@@ -1,0 +1,96 @@
+pepper_gz:
+  ros__parameters:
+    # El launch interpreta esta política; no crea otro nodo.
+    active_controllers:
+      - joint_state_broadcaster
+      - posture_controller
+      - head_controller
+      - left_arm_controller
+      - right_arm_controller
+      - base_controller
+    inactive_controllers: []
+    # Los controladores declarados fuera de ambas listas no se cargan al arrancar.
+
+controller_manager:
+  ros__parameters:
+    use_sim_time: true
+    update_rate: 100
+    enforce_command_limits: true
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+    posture_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+    head_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+    left_arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+    right_arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+    base_controller:
+      type: omni_wheel_drive_controller/OmniWheelDriveController
+
+joint_state_broadcaster:
+  ros__parameters:
+    use_sim_time: true
+    interfaces: [position, velocity]
+
+posture_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints: [HipRoll, HipPitch, KneePitch]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    allow_partial_joints_goal: false
+    interpolate_from_desired_state: false
+    set_last_command_interface_value_as_state_on_activation: false
+
+head_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints: [HeadYaw, HeadPitch]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    allow_partial_joints_goal: false
+    interpolate_from_desired_state: false
+    set_last_command_interface_value_as_state_on_activation: false
+
+left_arm_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints: [LShoulderPitch, LShoulderRoll, LElbowYaw, LElbowRoll, LWristYaw]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    allow_partial_joints_goal: false
+    interpolate_from_desired_state: false
+    set_last_command_interface_value_as_state_on_activation: false
+
+right_arm_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints: [RShoulderPitch, RShoulderRoll, RElbowYaw, RElbowRoll, RWristYaw]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    allow_partial_joints_goal: false
+    interpolate_from_desired_state: false
+    set_last_command_interface_value_as_state_on_activation: false
+
+base_controller:
+  ros__parameters:
+    use_sim_time: true
+    wheel_names: [WheelFL, WheelB, WheelFR]
+    # Radios cinemáticos efectivos ajustados con GZ Pose_V; ver validation/README.md.
+    # Dimensiones nominales URDF: radio medio 0.176156 m y rueda 0.070 m.
+    wheel_offset: 1.0471975511965976
+    robot_radius: 0.1746
+    wheel_radius: 0.0698
+    open_loop: false
+    position_feedback: false
+    cmd_vel_timeout: 0.3
+    odom_frame_id: odom
+    base_frame_id: base_link
+    tf_frame_prefix_enable: false
+    enable_odom_tf: false
+    # Covarianzas provisionales de simulación, pendientes de calibración.
+    diagonal_covariance:
+      pose: [0.01, 0.01, 1000000.0, 1000000.0, 1000000.0, 0.05]
+      twist: [0.01, 0.01, 1000000.0, 1000000.0, 1000000.0, 0.05]

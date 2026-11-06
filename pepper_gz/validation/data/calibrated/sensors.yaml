@@ -1,0 +1,70 @@
+profile: provisional_simulation
+# Valores de simulación;
+cameras:
+  top:
+    name: camera_top_rgb
+    type: camera
+    frame: CameraTop_frame
+    optical_frame: CameraTop_optical_frame
+    topic: /pepper/camera/top/image_raw
+    info_topic: /pepper/camera/top/camera_info
+    update_rate: 15.0
+    width: 640
+    height: 480
+    format: R8G8B8
+    horizontal_fov: 1.0471975512
+    near: 0.05
+    far: 20.0
+    noise_mean: 0.0
+    noise_stddev: 0.0
+  bottom:
+    name: camera_bottom_rgb
+    type: camera
+    frame: CameraBottom_frame
+    optical_frame: CameraBottom_optical_frame
+    topic: /pepper/camera/bottom/image_raw
+    info_topic: /pepper/camera/bottom/camera_info
+    update_rate: 15.0
+    width: 640
+    height: 480
+    format: R8G8B8
+    horizontal_fov: 1.0471975512
+    near: 0.05
+    far: 20.0
+    noise_mean: 0.0
+    noise_stddev: 0.0
+  depth:
+    name: camera_depth
+    type: depth_camera
+    frame: CameraDepth_frame
+    optical_frame: CameraDepth_optical_frame
+    topic: /pepper/camera/depth/image_raw
+    info_topic: /pepper/camera/depth/camera_info
+    update_rate: 15.0
+    width: 320
+    height: 240
+    format: R_FLOAT32
+    horizontal_fov: 1.0471975512
+    near: 0.1
+    far: 5.0
+    noise_mean: 0.0
+    noise_stddev: 0.0
+imus:
+  base:
+    name: imu_base
+    frame: ImuBaseAccelerometer_frame
+    topic: /pepper/imu/base
+    update_rate: 100.0
+    acceleration_mean: 0.0
+    acceleration_stddev: 0.0
+    angular_velocity_mean: 0.0
+    angular_velocity_stddev: 0.0
+  torso:
+    name: imu_torso
+    frame: ImuTorsoAccelerometer_frame
+    topic: /pepper/imu/torso
+    update_rate: 100.0
+    acceleration_mean: 0.0
+    acceleration_stddev: 0.0
+    angular_velocity_mean: 0.0
+    angular_velocity_stddev: 0.0

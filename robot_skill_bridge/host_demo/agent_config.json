@@ -25,6 +25,35 @@
     "wave_right": {
       "success": "¡Listo, ya saludé!",
       "failure": "No pude completar el saludo."
+    },
+    "move_relative": {
+      "success": "Listo, alcancé el desplazamiento solicitado según la odometría.",
+      "failure": "No pude completar el desplazamiento."
+    },
+    "turn_relative": {
+      "success": "Listo, completé el giro según la odometría.",
+      "failure": "No pude completar el giro."
+    },
+    "approach_object": {
+      "success": "Listo, me acerqué al objeto y comprobé la distancia con profundidad.",
+      "failure": "No pude completar la aproximación al objeto."
     }
+  },
+  "visual_navigation": {
+    "skill": "approach_object",
+    "description": "Buscar un objeto descrito en target, medir su posición con sensores y calcular un único desplazamiento completo hasta quedar a stop_distance_m (0.8 m por defecto). Gestiona su propia visión: perception_required=false. No requiere que el usuario indique distancia. No evita obstáculos.",
+    "observation_skill": "look_front",
+    "locate_skill": "locate_target",
+    "move_skill": "move_relative",
+    "turn_skill": "turn_relative",
+    "max_steps": 24,
+    "search_step_deg": 45.0,
+    "max_search_deg": 360.0,
+    "max_travel_m": 5.0,
+    "max_wall_sec": 600.0,
+    "max_observation_age_sec": 60.0,
+    "min_confidence": 0.65,
+    "coordinate_scale": 1000.0,
+    "goal_tolerance_m": 0.08
   }
 }

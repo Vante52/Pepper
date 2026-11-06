@@ -1,0 +1,4 @@
+Publishers [Address, Message Type]:
+  tcp://172.17.0.1:36087, gz.msgs.Pose_V
+Subscribers [Address, Message Type]:
+  tcp://172.17.0.1:32939, gz.msgs.Pose_V

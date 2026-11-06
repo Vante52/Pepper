@@ -14,6 +14,8 @@ import xml.etree.ElementTree as ET
 from ament_index_python.packages import get_package_share_directory
 from controller_manager_msgs.msg import ControllerManagerActivity
 from geometry_msgs.msg import Twist
+from pepper_gz.omni_kinematics import controller_geometry, wheel_limited_velocity
+from pepper_gz.omni_kinematics import wheel_limits_from_urdf
 import rclpy
 from rclpy.clock import Clock, ClockType
 from rclpy.executors import ExternalShutdownException
@@ -55,22 +57,6 @@ def joint_target(target, actual, direction, step, lead, lower, upper):
     return max(lower, actual-lead, min(upper, actual+lead, target+direction*step))
 
 
-def wheel_limited_velocity(velocity, geometry, wheel_limits):
-    """Escala la orden completa sin deformar su dirección ni exceder ninguna rueda."""
-    x, y, yaw = velocity
-    wheels = geometry['wheel_names']
-    scale = 1.
-    for index, wheel in enumerate(wheels):
-        angle = geometry['wheel_offset'] + index*2.*math.pi/len(wheels)
-        speed = (math.sin(angle)*x - math.cos(angle)*y
-                 - geometry['robot_radius']*yaw) / geometry['wheel_radius']
-        if wheel not in wheel_limits:
-            raise ValueError(f'Falta el límite de velocidad URDF de {wheel}')
-        if abs(speed) > wheel_limits[wheel]:
-            scale = min(scale, wheel_limits[wheel]/abs(speed))
-    return x*scale, y*scale, yaw*scale
-
-
 class KeyboardTeleop(Node):
     """Descubre joints y límites desde YAML y robot_description, sin otra instancia TF."""
 
@@ -93,11 +79,7 @@ class KeyboardTeleop(Node):
             self.get_parameter('controllers_config').value).read_text())
         declarations = controllers['controller_manager']['ros__parameters']
         base_controller = c.get('base_controller', 'base_controller')
-        if declarations.get(base_controller, {}).get('type') != (
-            'omni_wheel_drive_controller/OmniWheelDriveController'
-        ):
-            raise ValueError('base_controller debe seleccionar un controlador omni')
-        self.base_geometry = controllers[base_controller]['ros__parameters']
+        self.base_geometry = controller_geometry(controllers, base_controller)
         self.groups = {
             name: controllers[name]['ros__parameters']['joints']
             for name, spec in declarations.items() if isinstance(spec, dict)
@@ -140,14 +122,20 @@ class KeyboardTeleop(Node):
 
     def description(self, message):
         """Usa los límites reales sin duplicarlos en el teleoperador."""
-        self.limits, self.wheel_limits = {}, {}
-        for joint in ET.fromstring(message.data).findall('joint'):
+        self.wheel_limits = {}
+        try:
+            self.wheel_limits = wheel_limits_from_urdf(
+                message.data, self.base_geometry['wheel_names'])
+        except ValueError as exc:
+            self.base_command, self.key_at = (0., 0., 0.), None
+            self.get_logger().warning(str(exc), throttle_duration_sec=2.)
+        self.limits = {}
+        try:
+            robot = ET.fromstring(message.data)
+        except ET.ParseError:
+            return
+        for joint in robot.findall('joint'):
             limit = joint.find('limit')
-            if limit is not None and joint.get('type') in ('continuous', 'revolute'):
-                velocity = float(limit.get('velocity'))
-                if not math.isfinite(velocity) or velocity <= 0:
-                    raise ValueError(f"Límite de velocidad inválido: {joint.get('name')}")
-                self.wheel_limits[joint.get('name')] = velocity
             if limit is not None and joint.get('type') == 'revolute':
                 self.limits[joint.get('name')] = (
                     float(limit.get('lower')), float(limit.get('upper')),

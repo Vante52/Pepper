@@ -1,0 +1,10 @@
+# Rodillos pasivos provisionales de simulación, no dimensiones medidas de Pepper.
+wheel_links: [WheelFL_link, WheelB_link, WheelFR_link]
+roller_count: 24
+roller_radius: 0.01
+roller_length: 0.012
+roller_mass: 0.01
+friction: 1.0
+friction2: 1.0
+rolling_friction: 0.0
+torsional_friction: 0.0

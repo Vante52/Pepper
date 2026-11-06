@@ -3,10 +3,20 @@
 version: 1
 perception_providers:
   front_camera:
-    type: ros2_camera
+    type: ros2_target_camera
     topic: /pepper/camera/top/image_raw
     timeout_sec: 3.0
     max_dimension: 640
+    info_topic: /pepper/camera/top/camera_info
+    points_topic: /pepper/camera/depth/points
+    odom_topic: /base_controller/odom
+    base_frame: base_link
+    sync_tolerance_sec: 0.1
+    max_context_age_sec: 60.0
+    # Alturas respecto a base_link (cadera), para objetos sobre suelo plano.
+    # Excluyen el suelo, situado aproximadamente en z=-0.602 en este perfil.
+    target_min_z_m: -0.45
+    target_max_z_m: 1.5
 skills:
   wave_right:
     description: "Saludar al público con el brazo derecho"
@@ -49,3 +59,62 @@ skills:
     kind: perception
     backend: perception
     provider: front_camera
+
+  move_relative:
+    description: "Desplazarse una distancia en metros respecto a la orientación inicial: direction_deg=0 delante, 90 izquierda, -90 derecha, 180 atrás. Mantiene la orientación. No requiere visión."
+    backend: base_motion
+    mode: translate
+    cmd_vel_topic: /cmd_vel
+    odom_topic: /base_controller/odom
+    controller: base_controller
+    controller_manager: /controller_manager
+    linear_speed: 0.15
+    angular_speed: 0.5
+    position_tolerance: 0.015
+    yaw_tolerance: 0.025
+    state_timeout_sec: 1.0
+    stall_timeout_sec: 5.0
+    execution_timeout_sec: 150.0
+    parameters:
+      type: object
+      additionalProperties: false
+      required: [distance_m, direction_deg]
+      properties:
+        distance_m: {type: number, minimum: 0.0, maximum: 5.0, description: "la distancia que quieres recorrer, con su unidad"}
+        direction_deg: {type: number, minimum: -180.0, maximum: 180.0, description: "dirección en grados respecto a la base"}
+  turn_relative:
+    description: "Girar sobre sí mismo angle_deg grados; positivo izquierda, negativo derecha. No requiere visión."
+    backend: base_motion
+    mode: rotate
+    cmd_vel_topic: /cmd_vel
+    odom_topic: /base_controller/odom
+    controller: base_controller
+    controller_manager: /controller_manager
+    linear_speed: 0.15
+    angular_speed: 0.5
+    position_tolerance: 0.015
+    yaw_tolerance: 0.025
+    state_timeout_sec: 1.0
+    stall_timeout_sec: 5.0
+    execution_timeout_sec: 150.0
+    parameters:
+      type: object
+      additionalProperties: false
+      required: [angle_deg]
+      properties:
+        angle_deg: {type: number, minimum: -360.0, maximum: 360.0, description: "el ángulo que quieres girar, con su unidad"}
+  locate_target:
+    description: "Medir la posición de una región de una observación usando profundidad y TF"
+    kind: perception
+    backend: target_location
+    provider: front_camera
+    parameters:
+      type: object
+      additionalProperties: false
+      required: [observation_id, left, top, right, bottom]
+      properties:
+        observation_id: {type: string}
+        left: {type: number, minimum: 0.0, maximum: 1.0}
+        top: {type: number, minimum: 0.0, maximum: 1.0}
+        right: {type: number, minimum: 0.0, maximum: 1.0}
+        bottom: {type: number, minimum: 0.0, maximum: 1.0}

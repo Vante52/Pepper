@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from setuptools import find_packages, setup
 
 package_name = 'robot_skill_bridge'
@@ -10,8 +12,10 @@ setup(
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/config', ['config/pepper_skills.yaml']),
-    ],
-    install_requires=['setuptools', 'PyYAML', 'Pillow'],
+        ('share/' + package_name + '/launch', ['launch/skill_bridge.launch.py']),
+    ] + [(str(Path('share') / package_name / path.parent), [str(path)])
+         for path in sorted(Path('examples').rglob('*')) if path.is_file()],
+    install_requires=['setuptools', 'PyYAML', 'Pillow', 'numpy'],
     tests_require=['pytest'],
     zip_safe=True,
     maintainer='pepper-project',

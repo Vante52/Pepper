@@ -5,9 +5,9 @@ import argparse
 import json
 import math
 import os
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 
 if __package__:
     from .clients import HttpFailure, HttpSkillClient, OllamaModel
@@ -21,6 +21,7 @@ def main():
     parser = argparse.ArgumentParser(description='Pepper: conversación, visión y habilidades')
     parser.add_argument('text', nargs='?', help='Sin texto inicia una conversación interactiva')
     parser.add_argument('--skill', help='Probar directamente una habilidad, sin IA')
+    parser.add_argument('--parameters', default='{}', help='Argumentos JSON de --skill')
     parser.add_argument('--agent-config', default=str(
         Path(__file__).with_name('agent_config.json')))
     group = parser.add_mutually_exclusive_group()
@@ -43,7 +44,11 @@ def main():
         if args.skill:
             if args.skill not in {s['name'] for s in bridge.discover()}:
                 raise ValueError('Habilidad no disponible')
-            result = bridge.execute(args.skill)
+            parameters = json.loads(args.parameters)
+            if not isinstance(parameters, dict):
+                raise ValueError('--parameters debe ser un objeto JSON')
+            result = bridge.execute(args.skill, parameters) if parameters else bridge.execute(
+                args.skill)
             if 'observation' in result:
                 result['observation'].pop('image_base64', None)
             print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -55,7 +60,14 @@ def main():
                             vision_model=config['vision_model'])
         memory = ConversationMemory(None if args.no_memory else args.memory_file,
                                     config['max_history_turns'])
-        agent = MultimodalAgent(bridge, model, config, memory)
+
+        def show_plan(plan):
+            command = plan['command']
+            print(f"[Movimiento calculado: {command['distance_m']:.2f} m, "
+                  f"dirección {command['direction_deg']:.1f}°, "
+                  f"separación {plan['stop_distance_m']:.2f} m]", file=sys.stderr, flush=True)
+
+        agent = MultimodalAgent(bridge, model, config, memory, on_plan=show_plan)
         if args.watch:
             count = 0
             while not args.iterations or count < args.iterations:
@@ -91,7 +103,9 @@ def main():
                     if result.get('perception_error'):
                         print('[Percepción: ' + str(result['perception_error']) + ']')
                     if result.get('result'):
-                        print('[Habilidad: ' + str(result['result'].get('status')) + ']')
+                        outcome = result['result']
+                        detail = ': ' + outcome['detail'] if outcome.get('detail') else ''
+                        print('[Habilidad: ' + str(outcome.get('status')) + detail + ']')
         return 0
     except (KeyboardInterrupt, EOFError):
         return 0

@@ -1,0 +1,16 @@
+cmd_vel_guard:
+  ros__parameters:
+    use_sim_time: true
+    input_topic: /cmd_vel
+    output_topic: /base_controller/cmd_vel
+    base_frame: base_link
+    robot_description_topic: /robot_description
+    controller_manager: /controller_manager
+    controller_name: base_controller
+    publish_rate: 30.0
+    command_timeout: 0.3
+    max_linear_speed: 0.50
+    max_angular_speed: 1.25
+    # Rampas provisionales de simulación; watchdog y parada explícita siguen enviando cero.
+    max_linear_acceleration: 2.0
+    max_angular_acceleration: 5.0

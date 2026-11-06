@@ -67,8 +67,9 @@ articular permite manejar postura y ambos brazos; sus grupos se descubren en
 `controllers.yaml`, sin listas de joints en el launch.
 
 La base publica a 30 Hz. Una pulsación aislada mantiene la orden hasta
-`key_timeout` (0.5 s reales); después publica cero. El retraso inicial de
-repetición del teclado del sistema puede provocar una pausa breve. La velocidad
+`key_timeout` (0.75 s reales); después publica cero. Este margen permite el
+retraso inicial de repetición de 500 ms del teclado sin introducir una parada
+entre la primera pulsación y las repeticiones. La velocidad
 predeterminada es 0.50 m/s y el giro 1.25 rad/s. El teclado escala la orden
 completa cuando una rueda alcanzaría su límite URDF: el desplazamiento lateral
 queda aproximadamente en 0.44 m/s. En una simulación más lenta que
@@ -116,17 +117,47 @@ comanda `WheelFL`, `WheelB` y `WheelFR` en velocidad. Su odometría usa los esta
 articulares, no la posición real de Gazebo. `enable_odom_tf` está deshabilitado
 para reservar la autoridad TF a localización.
 
-El adaptador limita el módulo XY a 0.50 m/s y el giro a 1.25 rad/s, y publica cero
+`omni_kinematics.py` reúne la cinemática y el escalado proporcional usados por
+el teclado y el adaptador. Ambos leen la geometría del controlador seleccionado
+en `controllers.yaml` y los límites de velocidad de las ruedas del URDF recibido
+en `robot_description`. El launch pasa su `controllers_config` al adaptador;
+para iniciarlo aparte puedes configurar ese mismo parámetro y
+`robot_description_topic`.
+
+Ante una saturación se aplica un único factor a `(vx, vy, wz)`, conservando la
+dirección y la relación entre traslación y giro. Por ejemplo, `vx=0.50 m/s` junto
+con `wz=1.25 rad/s` requeriría unos 9.33 rad/s en una rueda; se reduce la orden
+completa hasta cumplir 6.28319 rad/s. Esto también protege las órdenes de otros
+publicadores de `/cmd_vel`. La salida de la rampa se comprueba con la misma
+función. Sin límites URDF completos y válidos, el adaptador mantiene cero y
+requiere una nueva orden después de recibirlos.
+
+El adaptador limita el módulo XY a 0.50 m/s y el giro a 1.25 rad/s con ese mismo
+criterio proporcional, y publica cero
 tras 0.3 s reales sin entrada, incluso con `/clock` congelado. Solo publica con
 la base activa, descarta órdenes de otra activación y detiene si hay más de un
 publicador en `/cmd_vel`. Para varios emisores usa un multiplexor con salida
 única. El controlador añade su propio watchdog de 0.3 s en tiempo simulado.
 
+Las órdenes nuevas y los cambios de sentido pasan por rampas de 2.0 m/s² y
+5.0 rad/s², configurables en `base_teleop.yaml`. Son parámetros provisionales
+de simulación. Desde reposo se alcanzan 0.50 m/s o 1.25 rad/s en 0.25 segundos
+simulados. La interpolación usa tiempo simulado, por lo que no acumula una
+aceleración mientras Gazebo está pausado. Espacio, una orden cero, la caducidad
+y los conflictos entre publicadores envían cero sin esperar a la rampa.
+
+Para distinguir bloqueos de lentitud gráfica, comprueba `/cmd_vel`,
+`/base_controller/cmd_vel`, `/joint_states` y el factor de tiempo real de Gazebo.
+Las pruebas de orden constante no mostraron bloqueos físicos; la simulación
+puede ejecutarse más despacio que el tiempo real, según la carga de renderizado
+y física. Las rampas conservan las velocidades máximas configuradas.
+
+
 ### Contacto físico
 
 Las esferas rígidas originales no reproducen el rodillo transversal libre de
 una rueda omni. Durante la conversión a SDF se reemplazan sus colisiones por
-12 cápsulas pasivas por rueda, con articulaciones tangentes a la llanta.
+24 cápsulas pasivas por rueda, con articulaciones tangentes a la llanta.
 Las mallas, los joints actuados y el árbol TF original permanecen intactos.
 La masa, el centro de masa y el tensor de inercia agregados se conservan al
 repartirlos entre cubo y rodillos. Los cuerpos adicionales existen solo en
@@ -160,6 +191,29 @@ velocidad de ruedas, deben estar reclamadas. Comprueba tanto estados articulares
 como movimiento físico en Gazebo; la odometría por sí sola no lo demuestra.
 
 ```bash
-colcon test --packages-select pepper_gz --ctest-args -R 'control_config|teleop'
+colcon test --packages-select pepper_gz --ctest-args -R 'control_config|teleop|omni_kinematics'
 colcon test-result --verbose
 ```
+
+
+## Medir y calibrar la base
+
+El comando siguiente inicia una simulación aislada y registra órdenes, estados
+articulares, odometría y pose real de Gazebo con timestamps de simulación:
+
+```bash
+ros2 run pepper_gz validate_base --output /tmp/pepper_base_run_01 --repetitions 2
+```
+
+El directorio debe ser nuevo. El plan está en `config/base_validation.yaml` e
+incluye avance, laterales, giros y arcos. El programa devuelve 2 cuando hay
+ensayos fuera de criterio y conserva todos los datos; no significa que Gazebo
+haya fallado. `--reanalyze` recalcula un directorio existente sin mover el robot.
+
+Los resultados medidos y sus límites de validez están en
+[validation/README.md](validation/README.md): a velocidad moderada, 15/16 ensayos
+cumplen los criterios, con error de posición máximo de 1.34 cm. La deriva lateral
+angular y la pérdida de precisión a velocidades altas siguen presentes. La
+configuración conserva el máximo solicitado al teleop; ese máximo no garantiza
+la misma precisión de odometría. Los radios de `controllers.yaml` son efectivos;
+las dimensiones de `pepper_description` no se modifican.

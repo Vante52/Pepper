@@ -1,17 +1,21 @@
 """Inicia puente HTTP y cliente ROS 2 sin mezclar ejecutores/hilos."""
 
-import threading
 from pathlib import Path
+import threading
 
 from ament_index_python.packages import get_package_share_directory
-
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 
 from .catalog import BackendRouter, load_catalog
 from .http_api import create_server
-from .perception import PerceptionBackend, parse_perception
+from .motion import parse_motion
+from .perception import parse_perception, PerceptionBackend
 from .perception_factory import create_perception_providers
+from .ros2_motion_backend import ROS2MotionBackend
+from .sequence_backend import parse_sequence, SequenceBackend, validate_sequences
+from .target import parse_target, TargetBackend
 from .trajectory_backend import TrajectoryBackend
 from .trajectory_profile import parse_trajectory
 
@@ -30,12 +34,17 @@ def main(args=None):
     rclpy.init(args=args)
     node = None
     server = None
+    backend = None
     try:
         node = SkillBridgeNode()
         catalog = load_catalog(node.get_parameter('config_file').value, {
             'follow_joint_trajectory': parse_trajectory,
             'perception': parse_perception,
+            'base_motion': parse_motion,
+            'target_location': parse_target,
+            'sequence': parse_sequence,
         })
+        validate_sequences(catalog)
         host = node.get_parameter('bind_host').value
         port = node.get_parameter('port').value
         if not isinstance(host, str) or not isinstance(port, int) or not 0 < port < 65536:
@@ -44,21 +53,30 @@ def main(args=None):
             raise ValueError('MVP local: bind_host debe ser loopback (sin autenticación)')
         providers = create_perception_providers(node, node.get_parameter('config_file').value)
         for skill in catalog.values():
-            if skill.backend == 'perception' and skill.profile not in providers:
+            if (skill.backend in ('perception', 'target_location')
+                    and skill.profile not in providers):
                 raise ValueError(f'{skill.name}: proveedor no configurado: {skill.profile}')
         backend = BackendRouter({
             'follow_joint_trajectory': TrajectoryBackend(node),
             'perception': PerceptionBackend(providers),
-        })
+            'base_motion': ROS2MotionBackend(node),
+            'target_location': TargetBackend(providers),
+        }, catalog)
+        backend.backends['sequence'] = SequenceBackend(backend)
         server = create_server(host, port, catalog, backend)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         node.get_logger().info(f'API HTTP activa: http://{host}:{port}/v1/skills')
         node.get_logger().info(f'Habilidades permitidas: {", ".join(catalog)}')
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    except RuntimeError:
+        if rclpy.ok():
+            raise
     finally:
+        if backend:
+            backend.close()
         if server:
             server.shutdown()
             server.server_close()

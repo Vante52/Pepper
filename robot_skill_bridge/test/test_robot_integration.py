@@ -1,18 +1,18 @@
 """Contrato YAML -> HTTP -> controlador -> estados reales. No usa Gazebo ni Ollama APIs."""
 
 import json
+from pathlib import Path
 import threading
 import time
-import xml.etree.ElementTree as ET
-from pathlib import Path
 from urllib.request import Request, urlopen
+import xml.etree.ElementTree as ET
 
 import pytest
-
 from robot_skill_bridge.catalog import load_catalog
+from robot_skill_bridge.motion import parse_motion
 from robot_skill_bridge.perception import parse_perception
+from robot_skill_bridge.target import parse_target
 from robot_skill_bridge.trajectory_profile import parse_trajectory
-
 import yaml
 
 
@@ -20,6 +20,7 @@ def pytest_generate_tests(metafunc):
     if 'configured_skill' in metafunc.fixturenames:
         catalog = load_catalog(metafunc.config.getoption('--skills-config'), {
             'follow_joint_trajectory': parse_trajectory, 'perception': parse_perception,
+            'base_motion': parse_motion, 'target_location': parse_target,
         })
         motions = [s for s in catalog.values() if s.backend == 'follow_joint_trajectory']
         metafunc.parametrize('configured_skill', motions, ids=[s.name for s in motions])
@@ -37,6 +38,7 @@ def test_profile_matches_installed_pepper_description_and_controllers():
     config = Path(__file__).resolve().parents[1] / 'config/pepper_skills.yaml'
     catalog = load_catalog(config, {
         'follow_joint_trajectory': parse_trajectory, 'perception': parse_perception,
+        'base_motion': parse_motion, 'target_location': parse_target,
     })
     controllers = yaml.safe_load((share / 'config/controllers.yaml').read_text())
     for skill in catalog.values():

@@ -1,0 +1,514 @@
+{
+  "recorded_on": "2026-11-06",
+  "environment": {
+    "ros": "Jazzy",
+    "gazebo": "Harmonic",
+    "physics": "Bullet Featherstone",
+    "mode": "isolated headless simulation",
+    "conversation_model": "qwen2.5:7b",
+    "vision_model": "qwen3-vl:2b-instruct"
+  },
+  "notes": [
+    "Motion endpoints use controller odometry, not independent world pose.",
+    "Target range is measured from base_link to the observed depth region, not body clearance.",
+    "The cone run precedes the additional floor-height filter; the sphere run includes that filter.",
+    "The requested distance tolerance for target approach is +0.04 m.",
+    "These runs demonstrate the pipeline, not recognition reliability across all scenes."
+  ],
+  "forward_0_25_m": {
+    "verification": {
+      "source": "/base_controller/odom",
+      "position_error_m": 0.014659818670467702,
+      "yaw_error_rad": -2.2685376141910578e-05,
+      "travelled_m": 0.23534018228119705,
+      "turned_rad": 2.2685376141910578e-05
+    },
+    "ok": true,
+    "status": "succeeded",
+    "skill": "move_relative",
+    "detail": "Objetivo alcanzado y parada verificada por odometría"
+  },
+  "left_0_20_m": {
+    "verification": {
+      "source": "/base_controller/odom",
+      "position_error_m": 0.014831685286342157,
+      "yaw_error_rad": -0.00029988384181887093,
+      "travelled_m": 0.18516831481478477,
+      "turned_rad": 0.0002998838418188711
+    },
+    "ok": true,
+    "status": "succeeded",
+    "skill": "move_relative",
+    "detail": "Objetivo alcanzado y parada verificada por odometría"
+  },
+  "cone": {
+    "request": "Busca el cono rojo y acércate a él",
+    "action": {
+      "skill": "approach_object",
+      "source": "user_request",
+      "parameters": {
+        "target": "cono rojo",
+        "stop_distance_m": 0.8
+      }
+    },
+    "result": {
+      "ok": true,
+      "status": "succeeded",
+      "detail": "Aproximación verificada con profundidad",
+      "skill": "approach_object",
+      "steps": [
+        {
+          "detection": {
+            "status": "missing",
+            "confidence": 0.0,
+            "left": 0.0,
+            "top": 0.0,
+            "right": 1.0,
+            "bottom": 1.0
+          },
+          "observation_id": "0cebd08176ec4ecb90a8c317b5a05326",
+          "motion": {
+            "verification": {
+              "source": "/base_controller/odom",
+              "position_error_m": 1.0577392059033339e-05,
+              "yaw_error_rad": 0.023925412584565153,
+              "travelled_m": 1.0577392059033339e-05,
+              "turned_rad": 0.7614727508128831
+            },
+            "ok": true,
+            "status": "succeeded",
+            "skill": "turn_relative",
+            "detail": "Objetivo alcanzado y parada verificada por odometría"
+          }
+        },
+        {
+          "detection": {
+            "status": "missing",
+            "confidence": 0.0,
+            "left": 0.0,
+            "top": 0.0,
+            "right": 0.0,
+            "bottom": 0.0
+          },
+          "observation_id": "cfbcdfc846dd461883d5e3da06e682f9",
+          "motion": {
+            "verification": {
+              "source": "/base_controller/odom",
+              "position_error_m": 5.475734571051507e-05,
+              "yaw_error_rad": 0.024010554966863218,
+              "travelled_m": 5.475734571051507e-05,
+              "turned_rad": 0.7613876084305851
+            },
+            "ok": true,
+            "status": "succeeded",
+            "skill": "turn_relative",
+            "detail": "Objetivo alcanzado y parada verificada por odometría"
+          }
+        },
+        {
+          "detection": {
+            "status": "found",
+            "confidence": 0.95,
+            "left": 0.37,
+            "top": 0.6,
+            "right": 0.534,
+            "bottom": 1.0
+          },
+          "observation_id": "d7de7e34194e41d498946686f25432b1",
+          "target": {
+            "x_m": 1.5938510423959866,
+            "y_m": 0.09943143440828497,
+            "z_m": 0.10804704829273087,
+            "distance_m": 1.5969495156376303,
+            "bearing_deg": 3.569736472446615,
+            "depth_samples": 1176,
+            "frame_id": "base_link",
+            "observation_id": "d7de7e34194e41d498946686f25432b1",
+            "sensor_stamp": 342.079
+          },
+          "motion": {
+            "verification": {
+              "source": "/base_controller/odom",
+              "position_error_m": 0.014635719623095272,
+              "yaw_error_rad": 8.408940455775782e-05,
+              "travelled_m": 0.1853642934835657,
+              "turned_rad": -8.408940455775782e-05
+            },
+            "ok": true,
+            "status": "succeeded",
+            "skill": "move_relative",
+            "detail": "Objetivo alcanzado y parada verificada por odometría"
+          }
+        },
+        {
+          "detection": {
+            "status": "found",
+            "confidence": 0.95,
+            "left": 0.378,
+            "top": 0.615,
+            "right": 0.538,
+            "bottom": 0.999
+          },
+          "observation_id": "c2f103e93d86487db18fba8851a63a9b",
+          "target": {
+            "x_m": 1.4206459096112294,
+            "y_m": 0.08170269099574627,
+            "z_m": 0.15300093446842844,
+            "distance_m": 1.4229933697003172,
+            "bearing_deg": 3.29150881084214,
+            "depth_samples": 1055,
+            "frame_id": "base_link",
+            "observation_id": "c2f103e93d86487db18fba8851a63a9b",
+            "sensor_stamp": 346.237
+          },
+          "motion": {
+            "verification": {
+              "source": "/base_controller/odom",
+              "position_error_m": 0.014550772453989991,
+              "yaw_error_rad": -0.0006071309466788577,
+              "travelled_m": 0.1854492996028497,
+              "turned_rad": 0.0006071309466788577
+            },
+            "ok": true,
+            "status": "succeeded",
+            "skill": "move_relative",
+            "detail": "Objetivo alcanzado y parada verificada por odometría"
+          }
+        },
+        {
+          "detection": {
+            "status": "found",
+            "confidence": 0.95,
+            "left": 0.388,
+            "top": 0.638,
+            "right": 0.538,
+            "bottom": 1.0
+          },
+          "observation_id": "951795f909e0498885519be845ef9bc0",
+          "target": {
+            "x_m": 1.2464492988651814,
+            "y_m": 0.06392001842273169,
+            "z_m": 0.19411253467379685,
+            "distance_m": 1.2480871858154239,
+            "bearing_deg": 2.935652428394765,
+            "depth_samples": 947,
+            "frame_id": "base_link",
+            "observation_id": "951795f909e0498885519be845ef9bc0",
+            "sensor_stamp": 350.395
+          },
+          "motion": {
+            "verification": {
+              "source": "/base_controller/odom",
+              "position_error_m": 0.014567013333371388,
+              "yaw_error_rad": 7.969468233876009e-05,
+              "travelled_m": 0.18543300891011794,
+              "turned_rad": -7.969468233876009e-05
+            },
+            "ok": true,
+            "status": "succeeded",
+            "skill": "move_relative",
+            "detail": "Objetivo alcanzado y parada verificada por odometría"
+          }
+        },
+        {
+          "detection": {
+            "status": "found",
+            "confidence": 0.95,
+            "left": 0.4,
+            "top": 0.658,
+            "right": 0.5,
+            "bottom": 0.999
+          },
+          "observation_id": "8a0bdd6a9a464176b83d4be7cef40b98",
+          "target": {
+            "x_m": 1.071929862715215,
+            "y_m": 0.055961729444432486,
+            "z_m": 0.24351069397028383,
+            "distance_m": 1.0733896523364996,
+            "bearing_deg": 2.9885002433213304,
+            "depth_samples": 714,
+            "frame_id": "base_link",
+            "observation_id": "8a0bdd6a9a464176b83d4be7cef40b98",
+            "sensor_stamp": 354.619
+          },
+          "motion": {
+            "verification": {
+              "source": "/base_controller/odom",
+              "position_error_m": 0.014579795078643555,
+              "yaw_error_rad": -0.000581969902697238,
+              "travelled_m": 0.1854206464357536,
+              "turned_rad": 0.0005819699026972379
+            },
+            "ok": true,
+            "status": "succeeded",
+            "skill": "move_relative",
+            "detail": "Objetivo alcanzado y parada verificada por odometría"
+          }
+        },
+        {
+          "detection": {
+            "status": "found",
+            "confidence": 0.95,
+            "left": 0.424,
+            "top": 0.694,
+            "right": 0.572,
+            "bottom": 0.999
+          },
+          "observation_id": "c0028f8ced204100904acec2efceff49",
+          "target": {
+            "x_m": 0.8986925087741566,
+            "y_m": 0.027925539664337723,
+            "z_m": 0.2805010796341276,
+            "distance_m": 0.8991262764997652,
+            "bearing_deg": 1.7798088596773896,
+            "depth_samples": 443,
+            "frame_id": "base_link",
+            "observation_id": "c0028f8ced204100904acec2efceff49",
+            "sensor_stamp": 358.711
+          },
+          "motion": {
+            "verification": {
+              "source": "/base_controller/odom",
+              "position_error_m": 0.014556330829699534,
+              "yaw_error_rad": -0.00017537938960199284,
+              "travelled_m": 0.08456997167983414,
+              "turned_rad": 0.00017537938960199284
+            },
+            "ok": true,
+            "status": "succeeded",
+            "skill": "move_relative",
+            "detail": "Objetivo alcanzado y parada verificada por odometría"
+          }
+        },
+        {
+          "detection": {
+            "status": "found",
+            "confidence": 0.95,
+            "left": 0.428,
+            "top": 0.719,
+            "right": 0.571,
+            "bottom": 0.999
+          },
+          "observation_id": "96650e98a11443d1b5f792cf727d6af1",
+          "target": {
+            "x_m": 0.8184588405869182,
+            "y_m": 0.0257868691065037,
+            "z_m": 0.298158364675564,
+            "distance_m": 0.8188649683270119,
+            "bearing_deg": 1.8045992088570022,
+            "depth_samples": 367,
+            "frame_id": "base_link",
+            "observation_id": "96650e98a11443d1b5f792cf727d6af1",
+            "sensor_stamp": 361.945
+          }
+        }
+      ],
+      "final_distance_m": 0.8188649683270119,
+      "travelled_m": 0.8991262764997652
+    }
+  },
+  "sphere": {
+    "request": "la esfera morada",
+    "result": {
+      "elapsed_sec": 91.10010399499879,
+      "ok": true,
+      "status": "succeeded",
+      "detail": "Aproximación verificada con profundidad",
+      "skill": "approach_object",
+      "steps": [
+        {
+          "detection": {
+            "status": "missing",
+            "confidence": 0.0,
+            "left": 0.0,
+            "top": 0.0,
+            "right": 1.0,
+            "bottom": 1.0
+          },
+          "observation_id": "215c57d28869420fb1e37c6f8dbf9436",
+          "motion": {
+            "verification": {
+              "source": "/base_controller/odom",
+              "position_error_m": 0.00021252116909817778,
+              "yaw_error_rad": 0.023826709375721178,
+              "travelled_m": 0.00021252116909817778,
+              "turned_rad": 0.7615714540217271
+            },
+            "ok": true,
+            "status": "succeeded",
+            "skill": "turn_relative",
+            "detail": "Objetivo alcanzado y parada verificada por odometría"
+          }
+        },
+        {
+          "detection": {
+            "status": "found",
+            "confidence": 0.95,
+            "left": 0.034,
+            "top": 0.725,
+            "right": 0.434,
+            "bottom": 1.0
+          },
+          "observation_id": "d0d62888668046d299bc67a8b4377fa6",
+          "target": {
+            "x_m": 1.1396341380324526,
+            "y_m": 0.3338081919047503,
+            "z_m": 0.20713278800625476,
+            "distance_m": 1.1875158430739734,
+            "bearing_deg": 16.325740839401867,
+            "depth_samples": 2686,
+            "frame_id": "base_link",
+            "observation_id": "d0d62888668046d299bc67a8b4377fa6",
+            "sensor_stamp": 432.301
+          },
+          "motion": {
+            "verification": {
+              "source": "/base_controller/odom",
+              "position_error_m": 4.3784362451885237e-05,
+              "yaw_error_rad": 0.024003969500388966,
+              "travelled_m": 4.3784362451885237e-05,
+              "turned_rad": 0.2609339609744764
+            },
+            "ok": true,
+            "status": "succeeded",
+            "skill": "turn_relative",
+            "detail": "Objetivo alcanzado y parada verificada por odometría"
+          }
+        },
+        {
+          "detection": {
+            "status": "found",
+            "confidence": 0.95,
+            "left": 0.3,
+            "top": 0.7,
+            "right": 0.7,
+            "bottom": 0.999
+          },
+          "observation_id": "9d452d34bde14e3bbd1291f3277cfed6",
+          "target": {
+            "x_m": 1.1873283025969241,
+            "y_m": 0.008516926577241169,
+            "z_m": 0.2005529755564846,
+            "distance_m": 1.1873588489525881,
+            "bearing_deg": 0.41098622581273175,
+            "depth_samples": 2817,
+            "frame_id": "base_link",
+            "observation_id": "9d452d34bde14e3bbd1291f3277cfed6",
+            "sensor_stamp": 435.469
+          },
+          "motion": {
+            "verification": {
+              "source": "/base_controller/odom",
+              "position_error_m": 0.01455727576889903,
+              "yaw_error_rad": 0.0003839938676488685,
+              "travelled_m": 0.1854427291185661,
+              "turned_rad": -0.00038399386764886856
+            },
+            "ok": true,
+            "status": "succeeded",
+            "skill": "move_relative",
+            "detail": "Objetivo alcanzado y parada verificada por odometría"
+          }
+        },
+        {
+          "detection": {
+            "status": "found",
+            "confidence": 0.95,
+            "left": 0.288,
+            "top": 0.744,
+            "right": 0.708,
+            "bottom": 0.999
+          },
+          "observation_id": "4d64837214ec4903816e4679cb785e28",
+          "target": {
+            "x_m": 1.032287991069267,
+            "y_m": 0.010937077126789239,
+            "z_m": 0.23017005637375926,
+            "distance_m": 1.0323459285345686,
+            "bearing_deg": 0.6070252862587724,
+            "depth_samples": 2473,
+            "frame_id": "base_link",
+            "observation_id": "4d64837214ec4903816e4679cb785e28",
+            "sensor_stamp": 439.495
+          },
+          "motion": {
+            "verification": {
+              "source": "/base_controller/odom",
+              "position_error_m": 0.014830554307609283,
+              "yaw_error_rad": -0.00022894999230516078,
+              "travelled_m": 0.18516945710071617,
+              "turned_rad": 0.00022894999230516072
+            },
+            "ok": true,
+            "status": "succeeded",
+            "skill": "move_relative",
+            "detail": "Objetivo alcanzado y parada verificada por odometría"
+          }
+        },
+        {
+          "detection": {
+            "status": "found",
+            "confidence": 0.95,
+            "left": 0.25,
+            "top": 0.794,
+            "right": 0.75,
+            "bottom": 1.0
+          },
+          "observation_id": "8b18c3fb81fe433496d507767a3a8a55",
+          "target": {
+            "x_m": 0.8909500340751346,
+            "y_m": 0.015913937391543717,
+            "z_m": 0.2574408720883159,
+            "distance_m": 0.8910921482213753,
+            "bearing_deg": 1.023294757105959,
+            "depth_samples": 2134,
+            "frame_id": "base_link",
+            "observation_id": "8b18c3fb81fe433496d507767a3a8a55",
+            "sensor_stamp": 443.587
+          },
+          "motion": {
+            "verification": {
+              "source": "/base_controller/odom",
+              "position_error_m": 0.014613352778665111,
+              "yaw_error_rad": -7.018280868464899e-05,
+              "travelled_m": 0.0764787961767048,
+              "turned_rad": 7.018280868464899e-05
+            },
+            "ok": true,
+            "status": "succeeded",
+            "skill": "move_relative",
+            "detail": "Objetivo alcanzado y parada verificada por odometría"
+          }
+        },
+        {
+          "detection": {
+            "status": "found",
+            "confidence": 0.95,
+            "left": 0.25,
+            "top": 0.815,
+            "right": 0.75,
+            "bottom": 1.0
+          },
+          "observation_id": "ab8a3fb01ac24ca18a3002206f105df6",
+          "target": {
+            "x_m": 0.8360816762663713,
+            "y_m": 0.017059757041232804,
+            "z_m": 0.269576654180844,
+            "distance_m": 0.8362557053310257,
+            "bearing_deg": 1.1689246263356903,
+            "depth_samples": 1849,
+            "frame_id": "base_link",
+            "observation_id": "ab8a3fb01ac24ca18a3002206f105df6",
+            "sensor_stamp": 446.953
+          }
+        }
+      ],
+      "final_distance_m": 0.8362557053310257,
+      "travelled_m": 0.49109214822137526
+    }
+  },
+  "configuration_sha256": {
+    "config/pepper_skills.yaml": "c0a398f3efe8caadbd08b950bb929b8cbd2403a2bc3009e9196bdace1152777e",
+    "host_demo/agent_config.json": "246f45defdc8d9106ba4182e6e4a6725feadc894bbdf3b1d0ba05f41034b6602"
+  }
+}

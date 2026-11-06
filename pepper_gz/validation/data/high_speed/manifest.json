@@ -1,0 +1,131 @@
+{
+  "command": [
+    "ros2",
+    "launch",
+    "pepper_gz",
+    "simulation.launch.py",
+    "gui:=false",
+    "paused:=false",
+    "world:=/tmp/pepper_calibration_20261106/holdout/world.sdf",
+    "controllers_config:=/tmp/pepper_calibration_20261106/holdout/controllers.yaml",
+    "wheel_contacts_config:=/tmp/pepper_calibration_20261106/holdout/wheel_contacts.yaml",
+    "sensors_config:=/tmp/pepper_calibration_20261106/holdout/sensors.yaml",
+    "teleop_config:=/tmp/pepper_calibration_20261106/holdout/base_teleop.yaml",
+    "initial_positions_config:=/tmp/pepper_calibration_20261106/holdout/initial_positions.yaml",
+    "bridge_config:=/tmp/pepper_calibration_20261106/holdout/sensors_bridge.yaml"
+  ],
+  "ROS_DOMAIN_ID": 188,
+  "GZ_PARTITION": "pepper_validation_712402a04012",
+  "geometry": {
+    "wheel_names": [
+      "WheelFL",
+      "WheelB",
+      "WheelFR"
+    ],
+    "wheel_offset": 1.0471975511965976,
+    "robot_radius": 0.1746,
+    "wheel_radius": 0.0698
+  },
+  "ground_truth": "GZ Transport Pose_V, modelo pepper",
+  "odometry": "/base_controller/odom",
+  "status": "failed",
+  "physics_engine": "gz-physics-bullet-featherstone-plugin",
+  "max_step_size": "0.001",
+  "repetitions": 1,
+  "trial_names": [
+    "forward",
+    "backward",
+    "left",
+    "right",
+    "turn_left",
+    "turn_right",
+    "arc_left",
+    "arc_right"
+  ],
+  "criteria": {
+    "endpoint_error_m": 0.03,
+    "endpoint_error_fraction": 0.05,
+    "orientation_error_rad": 0.05,
+    "linear_velocity_rmse_mps": 0.03,
+    "angular_velocity_rmse_rps": 0.05,
+    "max_base_tilt_rad": 0.1,
+    "base_height_range_m": 0.01,
+    "max_sample_gap_s": 0.1
+  },
+  "settle_time": 0.5,
+  "command_publish_rate_hz": 30.0,
+  "units": {
+    "time": "simulation seconds",
+    "position": "m",
+    "angle": "rad",
+    "linear_velocity": "m/s",
+    "angular_velocity": "rad/s"
+  },
+  "config_sha256": {
+    "plan.yaml": "b61194c240d1303edcac7dd16688cca30bab1235b47e92aeb8f15e19cdb5735f",
+    "world.sdf": "b8845d7c7c7fd111ea0be5fb14ad655ee04bd1e4333501f4ef7a415d1146750a",
+    "initial_positions.yaml": "47f85cd43a102a7f5fae681293ef002acc9d511cd86e04c176a9d744751a6c32",
+    "controllers.yaml": "f77d2b0d0c4aaece74ff34cd1e0c6e6281be578234e585cd32dd9198e62f7432",
+    "base_teleop.yaml": "202f496e4e2b6ffe130f598e35a4926a5259f6bdcfc780af217b4cbd95dd96fe",
+    "sensors.yaml": "453cc9e656b13e8fc349d86abf363473ae300931383d64e33eec1d88383360b1",
+    "wheel_contacts.yaml": "f95a530b43e0c275de1a6a4efd59363b5afdd93c365014de9202f9b945a3bb79",
+    "sensors_bridge.yaml": "821c4645ee2cf401af0f85555b0f7f7edbbd222014524eb09c257d4cb8ea32b9"
+  },
+  "model_root_frame": "base_link",
+  "odometry_frames": [
+    "odom",
+    "base_link"
+  ],
+  "fit": {
+    "linear_gain_truth_over_odom": 0.9926828466585981,
+    "angular_gain_truth_over_odom": 0.9933725308669996,
+    "suggested_effective_wheel_radius": 0.06928926269677015,
+    "suggested_effective_robot_radius": 0.17447877774042955
+  },
+  "aggregate": {
+    "start": 1.046,
+    "stop": 17.655,
+    "end": 18.15,
+    "reference_pose": [
+      0.6776332887321833,
+      0.36643233267661096,
+      -0.007774611746296633
+    ],
+    "reference_path_m": 3.2629297786209057,
+    "gazebo_pose_delta": [
+      0.7331804202200978,
+      0.44199029023679276,
+      0.10456096293060611
+    ],
+    "odom_pose_delta": [
+      0.6720105765338622,
+      0.3903824651353636,
+      0.004441627604110107
+    ],
+    "endpoint_error_m": 0.0800319772859461,
+    "endpoint_error_fraction": 0.02452764316606655,
+    "orientation_error_rad": -0.100119335326496,
+    "position_rmse_m": 0.0773396962980922,
+    "orientation_rmse_rad": 0.11021192714754004,
+    "linear_velocity_rmse_mps": 0.044940952136250364,
+    "angular_velocity_rmse_rps": 0.09967822884438189,
+    "tracking_endpoint_error_m": 0.09377893562630092,
+    "tracking_yaw_error_rad": 0.11233557467690275,
+    "max_base_tilt_rad": 0.0159635155267754,
+    "base_height_range_m": 0.0016401667808166875,
+    "ground_truth_max_gap_s": 0.005000000000000782,
+    "odom_max_gap_s": 0.010000000000001563,
+    "fit_sums": {
+      "linear_dot": 54.71967716821359,
+      "linear_sq": 54.92445763736918,
+      "yaw_dot": 242.98940574494458,
+      "yaw_sq": 246.7319945086061
+    }
+  },
+  "simulation_seconds": 18.158,
+  "wall_seconds": 104.5636683720004,
+  "urdf_sha256": "79f91ec0031e0bb986fa06133d3ed7834cc9789c5630991146279655bfde6a0e",
+  "package_versions": "ros-jazzy-gz-physics-vendor\t0.0.9-1noble.20260905.065116\nros-jazzy-gz-ros2-control\t1.2.20-1noble.20261006.040504\nros-jazzy-gz-sim-vendor\t0.0.13-1noble.20260905.073557\nros-jazzy-omni-wheel-drive-controller\t4.42.1-1noble.20260924.190604\n",
+  "velocity_comparison": "centered 100 ms on both sources",
+  "analysis_sha256": "d27a7ad87c45ada77a4246061fb2529574dbaf7cc1bb5a603ffab2440b4c3947"
+}

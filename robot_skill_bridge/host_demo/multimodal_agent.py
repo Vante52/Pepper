@@ -4,9 +4,15 @@ import base64
 import json
 import math
 import os
+from pathlib import Path
 import tempfile
 import time
-from pathlib import Path
+
+if __package__:
+    from .visual_navigation import (
+        navigation_capability, validate_navigation_config, VisualApproach)
+else:
+    from visual_navigation import VisualApproach, navigation_capability, validate_navigation_config
 
 
 def load_config(path):
@@ -39,6 +45,7 @@ def load_config(path):
             or not math.isfinite(age) or age <= 0):
         raise ValueError('max_observation_age_sec debe ser positivo y finito')
     config.setdefault('automatic_rules', [])
+    validate_navigation_config(config.get('visual_navigation'))
     if not isinstance(config['automatic_rules'], list):
         raise ValueError('automatic_rules debe ser una lista')
     if config.get('perception_skill') is not None and not isinstance(
@@ -171,8 +178,8 @@ class ReactivePolicy:
         self.memory.save()
 
 
-def decision_schema(names):
-    return {
+def decision_schema(names, skills=()):
+    result = {
         'type': 'object', 'additionalProperties': False,
         'properties': {
             'perception_required': {'type': 'boolean'},
@@ -186,6 +193,25 @@ def decision_schema(names):
             }, 'required': ['skill', 'source']},
         }, 'required': ['reply', 'perception_required', 'observations', 'action'],
     }
+    if any(s.get('parameters', {}).get('properties') for s in skills):
+        variants = []
+        for skill in [*skills, {'name': 'none'}]:
+            parameters = skill.get('parameters', {
+                'type': 'object', 'properties': {}, 'additionalProperties': False})
+            properties = {
+                'skill': {'type': 'string', 'enum': [skill['name']]},
+                'source': {'type': 'string', 'enum': ['user_request', 'observation', 'none']},
+                'parameters': parameters,
+            }
+            required = ['skill', 'source']
+            if parameters.get('required'):
+                required.append('parameters')
+            variants.append({'type': 'object', 'additionalProperties': False,
+                             'description': skill.get(
+                                 'description', 'Conversar o pedir aclaración'),
+                             'properties': properties, 'required': required})
+        result['properties']['action'] = {'oneOf': variants}
+    return result
 
 
 def validate_decision(output, names, has_image, watch):
@@ -205,7 +231,9 @@ def validate_decision(output, names, has_image, watch):
         raise ValueError('person_visible debe ser booleano o null')
     if not has_image and person is not None:
         raise ValueError('No se permite afirmar percepción sin imagen')
-    if (not isinstance(action, dict) or set(action) != {'skill', 'source'}
+    if (not isinstance(action, dict) or not {'skill', 'source'} <= set(action)
+            or set(action)-{'skill', 'source', 'parameters'}
+            or not isinstance(action.get('parameters', {}), dict)
             or not isinstance(action['skill'], str) or action['skill'] not in [*names, 'none']
             or action['source'] not in ('user_request', 'observation', 'none')):
         raise ValueError('Acción inválida o no disponible')
@@ -219,11 +247,41 @@ def validate_decision(output, names, has_image, watch):
     return output
 
 
+def action_parameters(skill, values):
+    """Valida el contrato público antes de enviar argumentos al adaptador HTTP."""
+    schema = skill.get('parameters', {'type': 'object', 'properties': {}})
+    properties = schema.get('properties', {})
+    if set(values)-properties.keys():
+        raise ValueError('La acción contiene parámetros desconocidos')
+    values = dict(values)
+    for name, spec in properties.items():
+        if name not in values and 'default' in spec:
+            values[name] = spec['default']
+        if name not in values:
+            continue
+        value, kind = values[name], spec.get('type')
+        valid = {'number': type(value) in (float, int), 'integer': type(value) is int,
+                 'string': isinstance(value, str), 'boolean': type(value) is bool}.get(kind, False)
+        if not valid:
+            raise ValueError(f'Parámetro inválido: {name}')
+        if kind in ('number', 'integer') and (
+            not math.isfinite(value) or not spec.get('minimum', -math.inf)
+            <= value <= spec.get('maximum', math.inf)
+        ):
+            raise ValueError(f'Parámetro fuera de límites: {name}')
+        if 'enum' in spec and value not in spec['enum']:
+            raise ValueError(f'Valor no permitido: {name}')
+    if set(schema.get('required', []))-values.keys():
+        raise ValueError('Faltan parámetros de la habilidad; aclare la petición')
+    return values
+
+
 class MultimodalAgent:
-    def __init__(self, bridge, model, config, memory=None, clock=time.time):
+    def __init__(self, bridge, model, config, memory=None, clock=time.time, on_plan=None):
         self.bridge, self.model, self.config, self.clock = bridge, model, config, clock
         self.memory = memory or ConversationMemory(max_turns=config['max_history_turns'])
         self.policy = ReactivePolicy(config['automatic_rules'], self.memory, clock)
+        self.on_plan = on_plan
 
     def acquire(self, perception):
         chosen = self.config.get('perception_skill')
@@ -300,6 +358,19 @@ class MultimodalAgent:
         capabilities = {s['name']: s['description'] for s in actions}
         prompt += 'Habilidades: ' + json.dumps(
             capabilities, ensure_ascii=False, separators=(',', ':'))
+        if any(s.get('parameters', {}).get('properties') for s in actions):
+            prompt += ('\nUsa action.parameters según el esquema de la habilidad. '
+                       'Convierte las unidades solicitadas; pregunta si faltan cantidades. '
+                       'No inventes distancias. La habilidad de buscar/acercarse a objetos '
+                       'gestiona su propia percepción: pasa la descripción en target y '
+                       'perception_required=false. No pide imágenes para conversar o mover '
+                       'distancias explícitas. Si hay una condición visual adicional, verifícala.')
+            prompt += ('\nIdentifica el objetivo de la petición actual: ir a un objeto requiere '
+                       'la habilidad de aproximación visual y su descripción; girar requiere '
+                       'un ángulo; desplazarse requiere una distancia y dirección. '
+                       'Si falta la distancia o el ángulo, action.skill=none y pregunta '
+                       'por ese dato. Conserva la intención aunque falten tildes. '
+                       'El historial aporta contexto; interpreta de nuevo la petición actual.')
         if watch:
             prompt += '\nObservación automática: no hay órdenes actuales del usuario.'
         current_request = text
@@ -308,12 +379,14 @@ class MultimodalAgent:
                 visual_facts, ensure_ascii=False, separators=(',', ':'))
         messages = [{'role': 'system', 'content': prompt},
                     {'role': 'user', 'content': current_request}]
-        schema = decision_schema(names)
+        schema = decision_schema(names, actions)
         # Las observaciones proceden exclusivamente del analizador de imágenes.
         del schema['properties']['observations']
         schema['required'].remove('observations')
-        del schema['properties']['action']['properties']['source']
-        schema['properties']['action']['required'].remove('source')
+        action_schema = schema['properties']['action']
+        for variant in action_schema.get('oneOf', [action_schema]):
+            del variant['properties']['source']
+            variant['required'].remove('source')
         if visual_facts:
             del schema['properties']['perception_required']
             schema['required'].remove('perception_required')
@@ -338,8 +411,17 @@ class MultimodalAgent:
     def turn(self, text, watch=False, perceive=False):
         skills = self.bridge.discover()
         actions = [s for s in skills if s.get('kind', 'action') == 'action']
+        navigation = self.config.get('visual_navigation')
+        roles = {navigation[key] for key in (
+            'observation_skill', 'locate_skill', 'move_skill', 'turn_skill'
+        )} if navigation else set()
+        if navigation and roles <= {s['name'] for s in skills}:
+            if navigation['skill'] in {s['name'] for s in skills}:
+                raise ValueError('La habilidad compuesta colisiona con el catálogo remoto')
+            actions.append(navigation_capability(navigation))
         names = [s['name'] for s in actions]
-        perception = [s['name'] for s in skills if s.get('kind') == 'perception']
+        perception = [s['name'] for s in skills if s.get('kind') == 'perception'
+                      and not s.get('parameters', {}).get('required')]
         explicit_perception = watch or perceive
         observation, perception_error = (
             self.acquire(perception) if explicit_perception else (None, None))
@@ -366,9 +448,29 @@ class MultimodalAgent:
             selected = output['action']['skill']
         elif fresh:
             selected = self.policy.choose(output['observations'], names)
+        parameters = {}
+        if selected:
+            capability = next(s for s in actions if s['name'] == selected)
+            requested = (output['action'].get('parameters', {})
+                         if output['action']['source'] == 'user_request' else {})
+            try:
+                parameters = action_parameters(capability, requested)
+            except ValueError as exc:
+                labels = [spec.get('description', name)
+                          for name, spec in capability.get('parameters', {}).get(
+                              'properties', {}).items()]
+                output['reply'] = ('Necesito que aclares la solicitud. '
+                                   + ('Indica: ' + ', '.join(labels) + '.' if labels
+                                      else 'Esta habilidad no admite esos parámetros.'))
+                output['action'] = {'skill': 'none', 'source': 'none'}
+                output['decision_error'] = str(exc)
+                self.memory.record(text, output)
+                return output
         output['action'] = {'skill': selected or 'none', 'source': (
             'user_request' if selected and output['action']['source'] == 'user_request'
             else 'observation' if selected else 'none')}
+        if parameters:
+            output['action']['parameters'] = parameters
         if perception_error:
             output['perception_error'] = perception_error
         if observation:
@@ -377,9 +479,18 @@ class MultimodalAgent:
         if selected:
             self.policy.reserve(selected, output['observations'] if fresh else {})
             try:
-                result = self.bridge.execute(selected)
+                if navigation and selected == navigation['skill']:
+                    result = VisualApproach(self.bridge, self.model, navigation,
+                                            self.clock, on_plan=self.on_plan).execute(parameters)
+                else:
+                    result = (self.bridge.execute(selected, parameters) if parameters
+                              else self.bridge.execute(selected))
             except RuntimeError as exc:
                 result = getattr(exc, 'result', {'ok': False, 'status': 'transport_error'})
+            except KeyboardInterrupt:
+                if not navigation or selected != navigation['skill']:
+                    self.bridge.cancel()
+                raise
             if not isinstance(result, dict) or type(result.get('ok')) is not bool:
                 result = {'ok': False, 'status': 'invalid_skill_result'}
             output['result'] = result

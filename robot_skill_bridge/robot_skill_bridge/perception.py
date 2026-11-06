@@ -4,6 +4,8 @@ import base64
 from dataclasses import dataclass
 from typing import Protocol
 
+from .skill_result import SkillResult
+
 
 @dataclass(frozen=True)
 class Observation:
@@ -13,13 +15,17 @@ class Observation:
     source: str
     frame_id: str = ''
     sensor_stamp: float | None = None
+    observation_id: str = ''
 
     def to_dict(self):
-        return {
+        result = {
             'image_base64': base64.b64encode(self.image).decode('ascii'),
             'media_type': self.media_type, 'captured_at': self.captured_at,
             'source': self.source, 'frame_id': self.frame_id, 'sensor_stamp': self.sensor_stamp,
         }
+        if self.observation_id:
+            result['observation_id'] = self.observation_id
+        return result
 
 
 class PerceptionProvider(Protocol):
@@ -52,11 +58,10 @@ class PerceptionBackend:
     def __init__(self, providers):
         self.providers = providers
 
-    def execute(self, skill):
+    def execute(self, skill, parameters=None, cancel=None):
         try:
             observation = self.providers[skill.profile].observe()
-            return 200, {'ok': True, 'skill': skill.name, 'status': 'observed',
-                         'observation': observation.to_dict()}
+            return SkillResult(True, 'observed', skill.name,
+                               data={'observation': observation.to_dict()})
         except (RuntimeError, OSError, ValueError, KeyError) as exc:
-            return 503, {'ok': False, 'skill': skill.name, 'status': 'perception_unavailable',
-                         'detail': str(exc)}
+            return SkillResult(False, 'perception_unavailable', skill.name, str(exc))

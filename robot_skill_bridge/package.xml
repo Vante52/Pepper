@@ -2,15 +2,22 @@
 <package format="3">
   <name>robot_skill_bridge</name>
   <version>0.1.0</version>
-  <description>Puente genérico de habilidades de IA hacia ROS 2 FollowJointTrajectory.</description>
+  <description>Habilidades robóticas por HTTP con adaptadores ROS 2 de movimiento y percepción.</description>
   <maintainer email="dev@example.invalid">Pepper project</maintainer>
   <license>MIT</license>
   <buildtool_depend>ament_python</buildtool_depend>
   <exec_depend>rclpy</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>control_msgs</exec_depend>
   <exec_depend>controller_manager_msgs</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>sensor_msgs_py</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>tf2_ros_py</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
   <exec_depend>cv_bridge</exec_depend>
   <exec_depend>python3-pil</exec_depend>
   <exec_depend>trajectory_msgs</exec_depend>

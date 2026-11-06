@@ -1,16 +1,14 @@
 """Contratos y proveedores intercambiables de percepción."""
 
 import base64
-import threading
-import time
 from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
+import threading
+import time
 from unittest.mock import Mock
 
 from PIL import Image
-
 import pytest
-
 from robot_skill_bridge.catalog import Skill
 from robot_skill_bridge.image_file_provider import ImageFileProvider
 from robot_skill_bridge.perception import MockPerceptionProvider, Observation, PerceptionBackend
@@ -32,16 +30,17 @@ def test_mock_provider_and_backend_follow_the_same_public_contract():
     observation = Observation(b'image', 'image/png', 100., 'mock')
     backend = PerceptionBackend({'front': MockPerceptionProvider([observation])})
     skill = Skill('look', 'Observar', 'perception', 'front', 'perception')
-    status, output = backend.execute(skill)
-    assert status == 200 and output['status'] == 'observed'
+    result = backend.execute(skill)
+    output = result.to_dict()
+    assert result.ok and result.status == 'observed'
     assert base64.b64decode(output['observation']['image_base64']) == b'image'
-    assert backend.execute(skill)[0] == 503  # Sin observaciones, no inventa otra.
+    assert not backend.execute(skill).ok  # Sin observaciones, no inventa otra.
 
 
 def test_missing_file_is_an_explicit_perception_error(tmp_path):
     backend = PerceptionBackend({'front': ImageFileProvider(tmp_path / 'missing.png')})
-    code, result = backend.execute(Skill('look', 'Observar', 'perception', 'front'))
-    assert code == 503 and result['status'] == 'perception_unavailable'
+    result = backend.execute(Skill('look', 'Observar', 'perception', 'front'))
+    assert not result.ok and result.status == 'perception_unavailable'
 
 
 def test_ros_provider_requires_a_new_frame_and_preserves_optical_frame():

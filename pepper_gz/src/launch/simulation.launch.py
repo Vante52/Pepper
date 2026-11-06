@@ -265,7 +265,8 @@ def launch_setup(context):
     if start_cmd_vel_guard:
         actions.append(Node(
             package='pepper_gz', executable='cmd_vel_guard', output='screen',
-            parameters=[LaunchConfiguration('teleop_config')],
+            parameters=[LaunchConfiguration('teleop_config'),
+                        {'controllers_config': str(controllers_path)}],
         ))
     spawner_arguments = [
         '--controller-manager', '/controller_manager',

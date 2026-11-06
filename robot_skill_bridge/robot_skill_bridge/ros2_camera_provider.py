@@ -3,12 +3,9 @@
 import threading
 import time
 
-from PIL import Image
-
 from cv_bridge import CvBridge
-
+from PIL import Image
 from rclpy.qos import qos_profile_sensor_data
-
 from sensor_msgs.msg import Image as RosImage
 
 from .image_file_provider import png_bytes
@@ -45,5 +42,8 @@ class ROS2CameraProvider:
         except Exception as exc:
             raise ValueError(f'Imagen ROS inválida ({message.encoding}): {exc}') from exc
         stamp = message.header.stamp.sec + message.header.stamp.nanosec * 1e-9
+        return self.make_observation(message, received_at, data, stamp)
+
+    def make_observation(self, message, received_at, data, stamp):
         return Observation(data, 'image/png', received_at, self.topic,
                            message.header.frame_id, stamp)

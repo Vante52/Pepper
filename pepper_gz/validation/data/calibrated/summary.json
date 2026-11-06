@@ -1,0 +1,811 @@
+[
+  {
+    "start": 1.042,
+    "stop": 3.748,
+    "end": 4.24,
+    "reference_pose": [
+      0.40205199999999885,
+      0.0,
+      0.0
+    ],
+    "reference_path_m": 0.40205199999999885,
+    "gazebo_pose_delta": [
+      0.3970860668923066,
+      0.0002247105658552757,
+      0.0007463772389587226
+    ],
+    "odom_pose_delta": [
+      0.40231181112652925,
+      -1.3866294116900889e-05,
+      -9.787365452220562e-05
+    ],
+    "endpoint_error_m": 0.005231187410103532,
+    "endpoint_error_fraction": 0.013011220961725217,
+    "orientation_error_rad": -0.0008442508934809282,
+    "position_rmse_m": 0.00680068338864462,
+    "orientation_rmse_rad": 0.00042507546284995586,
+    "linear_velocity_rmse_mps": 0.008306145366000686,
+    "angular_velocity_rmse_rps": 0.0003172278806783282,
+    "tracking_endpoint_error_m": 0.004971014631690524,
+    "tracking_yaw_error_rad": 0.0007463772389587226,
+    "max_base_tilt_rad": 0.0011641063586038294,
+    "base_height_range_m": 0.0002249890210497263,
+    "ground_truth_max_gap_s": 0.007000000000000561,
+    "odom_max_gap_s": 0.010000000000000675,
+    "fit_sums": {
+      "linear_dot": 2.4458026811886056,
+      "linear_sq": 2.474233114895923,
+      "yaw_dot": 0.0,
+      "yaw_sq": 0.0
+    },
+    "name": "forward",
+    "repeat": 1,
+    "nominal_distance": 0.4,
+    "nominal_angle": null,
+    "velocity": [
+      0.15,
+      0.0,
+      0.0
+    ],
+    "failures": {}
+  },
+  {
+    "start": 4.25,
+    "stop": 6.959,
+    "end": 7.459,
+    "reference_pose": [
+      -0.40133999999999853,
+      0.0,
+      0.0
+    ],
+    "reference_path_m": 0.40133999999999853,
+    "gazebo_pose_delta": [
+      -0.4016504038245365,
+      -0.00021272705720494988,
+      -6.762520041962683e-05
+    ],
+    "odom_pose_delta": [
+      -0.40258404063240544,
+      1.082255645337324e-05,
+      7.918272178004956e-05
+    ],
+    "endpoint_error_m": 0.0009600271448112888,
+    "endpoint_error_fraction": 0.0023920544795218326,
+    "orientation_error_rad": 0.0001468079221996764,
+    "position_rmse_m": 0.005207963206314592,
+    "orientation_rmse_rad": 0.00041510266171787156,
+    "linear_velocity_rmse_mps": 0.009194398759460315,
+    "angular_velocity_rmse_rps": 0.002749664781610466,
+    "tracking_endpoint_error_m": 0.00037630218595547125,
+    "tracking_yaw_error_rad": -6.762520041962683e-05,
+    "max_base_tilt_rad": 0.00115105726767934,
+    "base_height_range_m": 0.00020633856887708468,
+    "ground_truth_max_gap_s": 0.007000000000000561,
+    "odom_max_gap_s": 0.010000000000000675,
+    "fit_sums": {
+      "linear_dot": 2.4553853355834137,
+      "linear_sq": 2.474894073975418,
+      "yaw_dot": 0.0,
+      "yaw_sq": 0.0
+    },
+    "name": "backward",
+    "repeat": 1,
+    "nominal_distance": 0.4,
+    "nominal_angle": null,
+    "velocity": [
+      -0.15,
+      0.0,
+      0.0
+    ],
+    "failures": {}
+  },
+  {
+    "start": 7.462,
+    "stop": 10.174,
+    "end": 10.67,
+    "reference_pose": [
+      0.0,
+      0.40157199999999976,
+      0.0
+    ],
+    "reference_path_m": 0.40157199999999976,
+    "gazebo_pose_delta": [
+      0.0029312943468758432,
+      0.4149549777513795,
+      0.04555176813200181
+    ],
+    "odom_pose_delta": [
+      -9.164882094924635e-05,
+      0.4029799815311816,
+      -0.0035397663742466443
+    ],
+    "endpoint_error_m": 0.012350656657427374,
+    "endpoint_error_fraction": 0.03075577146172388,
+    "orientation_error_rad": -0.04909153450624846,
+    "position_rmse_m": 0.00598971969150994,
+    "orientation_rmse_rad": 0.021943155141880326,
+    "linear_velocity_rmse_mps": 0.010196293051118143,
+    "angular_velocity_rmse_rps": 0.0383992327120393,
+    "tracking_endpoint_error_m": 0.013700240145411751,
+    "tracking_yaw_error_rad": 0.04555176813200181,
+    "max_base_tilt_rad": 0.0016620355680430309,
+    "base_height_range_m": 0.000285074173682176,
+    "ground_truth_max_gap_s": 0.0070000000000014495,
+    "odom_max_gap_s": 0.010000000000001563,
+    "fit_sums": {
+      "linear_dot": 2.558957495834604,
+      "linear_sq": 2.4975003514835166,
+      "yaw_dot": 0.0,
+      "yaw_sq": 0.0
+    },
+    "name": "left",
+    "repeat": 1,
+    "nominal_distance": 0.4,
+    "nominal_angle": null,
+    "velocity": [
+      0.0,
+      0.15,
+      0.0
+    ],
+    "failures": {}
+  },
+  {
+    "start": 10.678,
+    "stop": 13.397,
+    "end": 13.889,
+    "reference_pose": [
+      0.0,
+      -0.40168000000000015,
+      0.0
+    ],
+    "reference_path_m": 0.40168000000000015,
+    "gazebo_pose_delta": [
+      0.0023236524911003018,
+      -0.41399955868918975,
+      -0.039088630354951234
+    ],
+    "odom_pose_delta": [
+      4.9294871479248215e-05,
+      -0.40356307306189654,
+      0.004704499698107488
+    ],
+    "endpoint_error_m": 0.010681429437609283,
+    "endpoint_error_fraction": 0.026591887665826725,
+    "orientation_error_rad": 0.043793130053058724,
+    "position_rmse_m": 0.005262579656395035,
+    "orientation_rmse_rad": 0.019947638462868015,
+    "linear_velocity_rmse_mps": 0.008693991811136444,
+    "angular_velocity_rmse_rps": 0.035369623082994156,
+    "tracking_endpoint_error_m": 0.012536781373055195,
+    "tracking_yaw_error_rad": -0.039088630354951234,
+    "max_base_tilt_rad": 0.0011778273674577983,
+    "base_height_range_m": 0.00027220835452701486,
+    "ground_truth_max_gap_s": 0.008000000000000895,
+    "odom_max_gap_s": 0.010000000000001563,
+    "fit_sums": {
+      "linear_dot": 2.55309310567958,
+      "linear_sq": 2.4966547094341185,
+      "yaw_dot": 0.0,
+      "yaw_sq": 0.0
+    },
+    "name": "right",
+    "repeat": 1,
+    "nominal_distance": 0.4,
+    "nominal_angle": null,
+    "velocity": [
+      0.0,
+      -0.15,
+      0.0
+    ],
+    "failures": {}
+  },
+  {
+    "start": 13.897,
+    "stop": 17.098,
+    "end": 17.6,
+    "reference_pose": [
+      0.0,
+      0.0,
+      1.5737899999999994
+    ],
+    "reference_path_m": 0.0,
+    "gazebo_pose_delta": [
+      0.0048052382775995925,
+      -0.00785504724566855,
+      1.565725214693278
+    ],
+    "odom_pose_delta": [
+      0.00015914837550650072,
+      -6.384607346862411e-06,
+      1.5729861609554598
+    ],
+    "endpoint_error_m": 0.009120726757694157,
+    "endpoint_error_fraction": null,
+    "orientation_error_rad": 0.007260946262181767,
+    "position_rmse_m": 0.006338583085494548,
+    "orientation_rmse_rad": 0.006971688573388671,
+    "linear_velocity_rmse_mps": 0.0031720505782337318,
+    "angular_velocity_rmse_rps": 0.003105241632313416,
+    "tracking_endpoint_error_m": 0.00920826162400881,
+    "tracking_yaw_error_rad": -0.008064785306721278,
+    "max_base_tilt_rad": 0.0003767831587025733,
+    "base_height_range_m": 0.00027337253241965787,
+    "ground_truth_max_gap_s": 0.007999999999999119,
+    "odom_max_gap_s": 0.010000000000001563,
+    "fit_sums": {
+      "linear_dot": 0.0,
+      "linear_sq": 0.0,
+      "yaw_dot": 33.571026571066085,
+      "yaw_sq": 33.751390538347636
+    },
+    "name": "turn_left",
+    "repeat": 1,
+    "nominal_distance": null,
+    "nominal_angle": 1.5707963267948966,
+    "velocity": [
+      0.0,
+      0.0,
+      0.5
+    ],
+    "failures": {}
+  },
+  {
+    "start": 17.607,
+    "stop": 20.823,
+    "end": 21.32,
+    "reference_pose": [
+      0.0,
+      0.0,
+      -1.5811549999999999
+    ],
+    "reference_path_m": 0.0,
+    "gazebo_pose_delta": [
+      0.005079488383605539,
+      0.007777384059806398,
+      -1.5781303401330933
+    ],
+    "odom_pose_delta": [
+      8.200272726010632e-05,
+      3.169817869267502e-05,
+      -1.5813828128832448
+    ],
+    "endpoint_error_m": 0.009217945142723664,
+    "endpoint_error_fraction": null,
+    "orientation_error_rad": -0.0032524727501515027,
+    "position_rmse_m": 0.006176307588765257,
+    "orientation_rmse_rad": 0.004684800819133273,
+    "linear_velocity_rmse_mps": 0.003311945344145599,
+    "angular_velocity_rmse_rps": 0.003791164921022222,
+    "tracking_endpoint_error_m": 0.009289182151993482,
+    "tracking_yaw_error_rad": 0.003024659866906587,
+    "max_base_tilt_rad": 0.00032108177800463616,
+    "base_height_range_m": 0.00026137383684687876,
+    "ground_truth_max_gap_s": 0.007999999999999119,
+    "odom_max_gap_s": 0.010000000000001563,
+    "fit_sums": {
+      "linear_dot": 0.0,
+      "linear_sq": 0.0,
+      "yaw_dot": 33.87729458900658,
+      "yaw_sq": 33.998737633499665
+    },
+    "name": "turn_right",
+    "repeat": 1,
+    "nominal_distance": null,
+    "nominal_angle": 1.5707963267948966,
+    "velocity": [
+      0.0,
+      0.0,
+      -0.5
+    ],
+    "failures": {}
+  },
+  {
+    "start": 21.323,
+    "stop": 24.707,
+    "end": 25.21,
+    "reference_pose": [
+      0.2756763484237053,
+      0.297584874130906,
+      1.0036927411581087
+    ],
+    "reference_path_m": 0.42319401773832893,
+    "gazebo_pose_delta": [
+      0.277533018012362,
+      0.2878859508745358,
+      1.0061622902123264
+    ],
+    "odom_pose_delta": [
+      0.27662358828328504,
+      0.2984261242175649,
+      1.0062390319210088
+    ],
+    "endpoint_error_m": 0.010579334408800548,
+    "endpoint_error_fraction": 0.02499878061920527,
+    "orientation_error_rad": 7.674170868243735e-05,
+    "position_rmse_m": 0.009060559346010607,
+    "orientation_rmse_rad": 0.0024901939941351595,
+    "linear_velocity_rmse_mps": 0.007805961910942352,
+    "angular_velocity_rmse_rps": 0.01092852894775939,
+    "tracking_endpoint_error_m": 0.009875035913575301,
+    "tracking_yaw_error_rad": 0.002469549054217701,
+    "max_base_tilt_rad": 0.0010758407375102408,
+    "base_height_range_m": 0.00022409392270728024,
+    "ground_truth_max_gap_s": 0.0070000000000014495,
+    "odom_max_gap_s": 0.010000000000001563,
+    "fit_sums": {
+      "linear_dot": 2.2834949763033965,
+      "linear_sq": 2.308269765909515,
+      "yaw_dot": 13.025799170313244,
+      "yaw_sq": 12.896879751820013
+    },
+    "name": "arc_left",
+    "repeat": 1,
+    "nominal_distance": null,
+    "nominal_angle": 1.0,
+    "velocity": [
+      0.12,
+      0.04,
+      0.3
+    ],
+    "failures": {}
+  },
+  {
+    "start": 25.215,
+    "stop": 28.59,
+    "end": 29.088,
+    "reference_pose": [
+      0.2756296781065769,
+      -0.2973986693469478,
+      -1.0032374575470795
+    ],
+    "reference_path_m": 0.423002053312702,
+    "gazebo_pose_delta": [
+      0.2804779749222882,
+      -0.28730996914605184,
+      -1.0137181290530264
+    ],
+    "odom_pose_delta": [
+      0.27628825294236625,
+      -0.29754013906420734,
+      -1.0055540348858278
+    ],
+    "endpoint_error_m": 0.01105486982390001,
+    "endpoint_error_fraction": 0.026134317167788676,
+    "orientation_error_rad": 0.008164094167198543,
+    "position_rmse_m": 0.009677603446914948,
+    "orientation_rmse_rad": 0.0045979539666906434,
+    "linear_velocity_rmse_mps": 0.006982274601623579,
+    "angular_velocity_rmse_rps": 0.006913020860702164,
+    "tracking_endpoint_error_m": 0.011193205696170995,
+    "tracking_yaw_error_rad": -0.010480671505946892,
+    "max_base_tilt_rad": 0.001101923838298392,
+    "base_height_range_m": 0.00024158663843876216,
+    "ground_truth_max_gap_s": 0.0070000000000014495,
+    "odom_max_gap_s": 0.010000000000001563,
+    "fit_sums": {
+      "linear_dot": 2.2805666405563922,
+      "linear_sq": 2.302588177385174,
+      "yaw_dot": 13.133049463309993,
+      "yaw_sq": 12.966371039363608
+    },
+    "name": "arc_right",
+    "repeat": 1,
+    "nominal_distance": null,
+    "nominal_angle": 1.0,
+    "velocity": [
+      0.12,
+      -0.04,
+      -0.3
+    ],
+    "failures": {}
+  },
+  {
+    "start": 29.09,
+    "stop": 31.808,
+    "end": 32.31,
+    "reference_pose": [
+      0.4016880000000001,
+      0.0,
+      0.0
+    ],
+    "reference_path_m": 0.4016880000000001,
+    "gazebo_pose_delta": [
+      0.4020043722307671,
+      0.0032751603407750506,
+      0.012571515665917932
+    ],
+    "odom_pose_delta": [
+      0.402911927894306,
+      -0.00042995665985690306,
+      0.001208112687535086
+    ],
+    "endpoint_error_m": 0.0038146492985323627,
+    "endpoint_error_fraction": 0.009496547814553488,
+    "orientation_error_rad": -0.011363402978382845,
+    "position_rmse_m": 0.005186955208386585,
+    "orientation_rmse_rad": 0.007082235926768516,
+    "linear_velocity_rmse_mps": 0.008099812716749187,
+    "angular_velocity_rmse_rps": 0.006456140826185753,
+    "tracking_endpoint_error_m": 0.0032904052404204333,
+    "tracking_yaw_error_rad": 0.012571515665917932,
+    "max_base_tilt_rad": 0.0010637046197338918,
+    "base_height_range_m": 0.00018955267953768562,
+    "ground_truth_max_gap_s": 0.008000000000002672,
+    "odom_max_gap_s": 0.010000000000005116,
+    "fit_sums": {
+      "linear_dot": 2.4995159904217674,
+      "linear_sq": 2.4963087709621954,
+      "yaw_dot": 0.0,
+      "yaw_sq": 0.0
+    },
+    "name": "forward",
+    "repeat": 2,
+    "nominal_distance": 0.4,
+    "nominal_angle": null,
+    "velocity": [
+      0.15,
+      0.0,
+      0.0
+    ],
+    "failures": {}
+  },
+  {
+    "start": 32.316,
+    "stop": 35.028,
+    "end": 35.527,
+    "reference_pose": [
+      -0.40133399999999997,
+      0.0,
+      0.0
+    ],
+    "reference_path_m": 0.40133399999999997,
+    "gazebo_pose_delta": [
+      -0.3935062681773169,
+      0.0006128994176337342,
+      -0.0035434834041283615
+    ],
+    "odom_pose_delta": [
+      -0.4020551411621806,
+      -0.0003667186598665577,
+      -0.0026139310833302037
+    ],
+    "endpoint_error_m": 0.00860481730713083,
+    "endpoint_error_fraction": 0.021440539070028533,
+    "orientation_error_rad": 0.0009295523207981577,
+    "position_rmse_m": 0.009446384549939112,
+    "orientation_rmse_rad": 0.0023855083416448124,
+    "linear_velocity_rmse_mps": 0.009316197740150581,
+    "angular_velocity_rmse_rps": 0.008923938073251928,
+    "tracking_endpoint_error_m": 0.007851689702476872,
+    "tracking_yaw_error_rad": -0.0035434834041283615,
+    "max_base_tilt_rad": 0.0011413951881168376,
+    "base_height_range_m": 0.00013105535292967652,
+    "ground_truth_max_gap_s": 0.007000000000005002,
+    "odom_max_gap_s": 0.010000000000005116,
+    "fit_sums": {
+      "linear_dot": 2.43306234120323,
+      "linear_sq": 2.4960929128158273,
+      "yaw_dot": 0.0,
+      "yaw_sq": 0.0
+    },
+    "name": "backward",
+    "repeat": 2,
+    "nominal_distance": 0.4,
+    "nominal_angle": null,
+    "velocity": [
+      -0.15,
+      0.0,
+      0.0
+    ],
+    "failures": {}
+  },
+  {
+    "start": 35.53,
+    "stop": 38.253,
+    "end": 38.75,
+    "reference_pose": [
+      0.0,
+      0.40171799999999824,
+      0.0
+    ],
+    "reference_path_m": 0.40171799999999824,
+    "gazebo_pose_delta": [
+      0.008969800850916398,
+      0.4127086046596425,
+      0.045741052309318325
+    ],
+    "odom_pose_delta": [
+      -0.00020540625942097254,
+      0.40298859732971165,
+      -0.0036654329403400816
+    ],
+    "endpoint_error_m": 0.013366486749011298,
+    "endpoint_error_fraction": 0.03327330801460566,
+    "orientation_error_rad": -0.049406485249658405,
+    "position_rmse_m": 0.006626774517289902,
+    "orientation_rmse_rad": 0.020446400951729254,
+    "linear_velocity_rmse_mps": 0.013393737186044578,
+    "angular_velocity_rmse_rps": 0.047535749779134925,
+    "tracking_endpoint_error_m": 0.014186286268424669,
+    "tracking_yaw_error_rad": 0.045741052309318325,
+    "max_base_tilt_rad": 0.0027217096785999463,
+    "base_height_range_m": 0.00031880715332388565,
+    "ground_truth_max_gap_s": 0.007000000000005002,
+    "odom_max_gap_s": 0.010000000000005116,
+    "fit_sums": {
+      "linear_dot": 2.5502505352088654,
+      "linear_sq": 2.5001936070083435,
+      "yaw_dot": 0.0,
+      "yaw_sq": 0.0
+    },
+    "name": "left",
+    "repeat": 2,
+    "nominal_distance": 0.4,
+    "nominal_angle": null,
+    "velocity": [
+      0.0,
+      0.15,
+      0.0
+    ],
+    "failures": {}
+  },
+  {
+    "start": 38.753,
+    "stop": 41.474,
+    "end": 41.97,
+    "reference_pose": [
+      0.0,
+      -0.4018719999999987,
+      0.0
+    ],
+    "reference_path_m": 0.4018719999999987,
+    "gazebo_pose_delta": [
+      0.00395523783570597,
+      -0.4154664923233393,
+      -0.05120922020253963
+    ],
+    "odom_pose_delta": [
+      -0.0001603238971267535,
+      -0.4034249407795653,
+      0.005571647701110173
+    ],
+    "endpoint_error_m": 0.012725439558542696,
+    "endpoint_error_fraction": 0.031665404801884026,
+    "orientation_error_rad": 0.056780867903649807,
+    "position_rmse_m": 0.005710153307859761,
+    "orientation_rmse_rad": 0.024720132855083208,
+    "linear_velocity_rmse_mps": 0.013077358423998582,
+    "angular_velocity_rmse_rps": 0.046458368652356904,
+    "tracking_endpoint_error_m": 0.014158182364497493,
+    "tracking_yaw_error_rad": -0.05120922020253963,
+    "max_base_tilt_rad": 0.002609352378400446,
+    "base_height_range_m": 0.00018605578449037985,
+    "ground_truth_max_gap_s": 0.005000000000002558,
+    "odom_max_gap_s": 0.010000000000005116,
+    "fit_sums": {
+      "linear_dot": 2.5510493501968616,
+      "linear_sq": 2.4963931489812863,
+      "yaw_dot": 0.0,
+      "yaw_sq": 0.0
+    },
+    "name": "right",
+    "repeat": 2,
+    "nominal_distance": 0.4,
+    "nominal_angle": null,
+    "velocity": [
+      0.0,
+      -0.15,
+      0.0
+    ],
+    "failures": {
+      "orientation_error_rad": {
+        "measured": 0.056780867903649807,
+        "limit": 0.05
+      },
+      "tracking_yaw_error_rad": {
+        "measured": -0.05120922020253963,
+        "limit": 0.05
+      }
+    }
+  },
+  {
+    "start": 41.975,
+    "stop": 45.175,
+    "end": 45.67,
+    "reference_pose": [
+      0.0,
+      0.0,
+      1.5752000000000015
+    ],
+    "reference_path_m": 0.0,
+    "gazebo_pose_delta": [
+      0.004792539645647061,
+      -0.0060757235268495,
+      1.5681165434527873
+    ],
+    "odom_pose_delta": [
+      -0.00018937044894564063,
+      0.00019472243262579368,
+      1.57189402771214
+    ],
+    "endpoint_error_m": 0.008008615406005254,
+    "endpoint_error_fraction": null,
+    "orientation_error_rad": 0.003777484259352759,
+    "position_rmse_m": 0.005223453042784258,
+    "orientation_rmse_rad": 0.005547601571389646,
+    "linear_velocity_rmse_mps": 0.005518001611218356,
+    "angular_velocity_rmse_rps": 0.005841775969099399,
+    "tracking_endpoint_error_m": 0.0077384011675417416,
+    "tracking_yaw_error_rad": -0.007083456547214206,
+    "max_base_tilt_rad": 0.0011039619441437628,
+    "base_height_range_m": 0.0002013588240368236,
+    "ground_truth_max_gap_s": 0.005000000000002558,
+    "odom_max_gap_s": 0.010000000000005116,
+    "fit_sums": {
+      "linear_dot": 0.0,
+      "linear_sq": 0.0,
+      "yaw_dot": 33.62432992392678,
+      "yaw_sq": 33.75320816924708
+    },
+    "name": "turn_left",
+    "repeat": 2,
+    "nominal_distance": null,
+    "nominal_angle": 1.5707963267948966,
+    "velocity": [
+      0.0,
+      0.0,
+      0.5
+    ],
+    "failures": {}
+  },
+  {
+    "start": 45.678,
+    "stop": 48.885,
+    "end": 49.38,
+    "reference_pose": [
+      0.0,
+      0.0,
+      -1.5772650000000006
+    ],
+    "reference_path_m": 0.0,
+    "gazebo_pose_delta": [
+      0.005922932278016082,
+      0.007886450288031348,
+      -1.5713979602310015
+    ],
+    "odom_pose_delta": [
+      -2.215791306581631e-05,
+      3.493829087100928e-06,
+      -1.5747949434617055
+    ],
+    "endpoint_error_m": 0.009873454305039803,
+    "endpoint_error_fraction": null,
+    "orientation_error_rad": -0.0033969832307039205,
+    "position_rmse_m": 0.006862479833323312,
+    "orientation_rmse_rad": 0.004960988730928012,
+    "linear_velocity_rmse_mps": 0.005793146399831351,
+    "angular_velocity_rmse_rps": 0.004637177905655283,
+    "tracking_endpoint_error_m": 0.009862921723077525,
+    "tracking_yaw_error_rad": 0.0058670397689990494,
+    "max_base_tilt_rad": 0.0010844207716230534,
+    "base_height_range_m": 0.00019804296268133292,
+    "ground_truth_max_gap_s": 0.005000000000002558,
+    "odom_max_gap_s": 0.010000000000005116,
+    "fit_sums": {
+      "linear_dot": 0.0,
+      "linear_sq": 0.0,
+      "yaw_dot": 33.61104515324821,
+      "yaw_sq": 33.706783142047236
+    },
+    "name": "turn_right",
+    "repeat": 2,
+    "nominal_distance": null,
+    "nominal_angle": 1.5707963267948966,
+    "velocity": [
+      0.0,
+      0.0,
+      -0.5
+    ],
+    "failures": {}
+  },
+  {
+    "start": 49.386,
+    "stop": 52.77,
+    "end": 53.27,
+    "reference_pose": [
+      0.27574693024795055,
+      0.29786716626841536,
+      1.0043828660714154
+    ],
+    "reference_path_m": 0.4234849999511429,
+    "gazebo_pose_delta": [
+      0.2791229481378926,
+      0.29012199434206104,
+      1.013300056109218
+    ],
+    "odom_pose_delta": [
+      0.2760691157999454,
+      0.29962959004348294,
+      1.0110307249211055
+    ],
+    "endpoint_error_m": 0.009986003603543727,
+    "endpoint_error_fraction": 0.023580536747926855,
+    "orientation_error_rad": -0.0022693311881125666,
+    "position_rmse_m": 0.0076792357546392655,
+    "orientation_rmse_rad": 0.0026991215580446522,
+    "linear_velocity_rmse_mps": 0.005830932003044524,
+    "angular_velocity_rmse_rps": 0.008888889392634835,
+    "tracking_endpoint_error_m": 0.008448975379417084,
+    "tracking_yaw_error_rad": 0.00891719003780267,
+    "max_base_tilt_rad": 0.001077759807999131,
+    "base_height_range_m": 0.00023614152885309547,
+    "ground_truth_max_gap_s": 0.005000000000002558,
+    "odom_max_gap_s": 0.010000000000005116,
+    "fit_sums": {
+      "linear_dot": 2.2807592535096326,
+      "linear_sq": 2.304642080967067,
+      "yaw_dot": 13.067449175645582,
+      "yaw_sq": 12.941577032263346
+    },
+    "name": "arc_left",
+    "repeat": 2,
+    "nominal_distance": null,
+    "nominal_angle": 1.0,
+    "velocity": [
+      0.12,
+      0.04,
+      0.3
+    ],
+    "failures": {}
+  },
+  {
+    "start": 53.274,
+    "stop": 56.66,
+    "end": 57.15,
+    "reference_pose": [
+      0.2756973484040205,
+      -0.29766877712422574,
+      -1.0038978728283003
+    ],
+    "reference_path_m": 0.4232805088447357,
+    "gazebo_pose_delta": [
+      0.2808675109673604,
+      -0.2869287415099378,
+      -1.0163825235894608
+    ],
+    "odom_pose_delta": [
+      0.27607054651617385,
+      -0.29786449572392576,
+      -1.0077710061468008
+    ],
+    "endpoint_error_m": 0.01194159068862699,
+    "endpoint_error_fraction": 0.028212002298946645,
+    "orientation_error_rad": 0.008611517442659977,
+    "position_rmse_m": 0.009561194414197505,
+    "orientation_rmse_rad": 0.004614688616125712,
+    "linear_velocity_rmse_mps": 0.006404580871226655,
+    "angular_velocity_rmse_rps": 0.006871598453979687,
+    "tracking_endpoint_error_m": 0.011919687325074207,
+    "tracking_yaw_error_rad": -0.012484650761160454,
+    "max_base_tilt_rad": 0.001108024856372114,
+    "base_height_range_m": 0.0002373699896734971,
+    "ground_truth_max_gap_s": 0.007000000000005002,
+    "odom_max_gap_s": 0.010000000000005116,
+    "fit_sums": {
+      "linear_dot": 2.279335804862537,
+      "linear_sq": 2.300791322343744,
+      "yaw_dot": 13.151927176133388,
+      "yaw_sq": 12.995224664814355
+    },
+    "name": "arc_right",
+    "repeat": 2,
+    "nominal_distance": null,
+    "nominal_angle": 1.0,
+    "velocity": [
+      0.12,
+      -0.04,
+      -0.3
+    ],
+    "failures": {}
+  }
+]

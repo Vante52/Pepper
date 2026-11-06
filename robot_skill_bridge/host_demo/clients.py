@@ -45,8 +45,24 @@ class HttpSkillClient:
             raise ValueError('Catálogo HTTP inválido')
         return skills
 
-    def execute(self, skill):
-        return self.transport(self.base_url + '/v1/skills/execute', {'skill': skill}, timeout=180)
+    def execute(self, skill, parameters=None):
+        payload = {'skill': skill}
+        if parameters is not None:
+            payload['parameters'] = parameters
+        try:
+            return self.transport(self.base_url + '/v1/skills/execute', payload, timeout=180)
+        except HttpFailure:
+            raise
+        except RuntimeError:
+            # Una respuesta perdida no demuestra que el movimiento haya terminado.
+            try:
+                self.cancel()
+            except RuntimeError:
+                pass
+            raise
+
+    def cancel(self):
+        return self.transport(self.base_url + '/v1/skills/cancel', {}, timeout=5)
 
 
 class OllamaModel:
@@ -62,6 +78,7 @@ class OllamaModel:
             'model': self.vision_model if any(m.get('images') for m in messages) else self.model,
             'messages': messages, 'format': schema,
             'stream': False, 'think': self.thinking,
+            'keep_alive': '30m',
             'options': {'temperature': 0, 'num_predict': 256, 'num_ctx': 4096},
         }
         for attempt in range(2):

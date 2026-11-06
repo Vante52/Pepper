@@ -7,14 +7,17 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import pytest
+from robot_skill_bridge.catalog import load_catalog
+from robot_skill_bridge.motion import parse_motion
+from robot_skill_bridge.perception import parse_perception
+from robot_skill_bridge.skill_result import SkillResult
+from robot_skill_bridge.target import parse_target
+from robot_skill_bridge.trajectory_profile import parse_trajectory
 
 pytest.importorskip('rclpy')
 GoalStatus = pytest.importorskip('action_msgs.msg').GoalStatus
-
-from robot_skill_bridge.catalog import load_catalog
-from robot_skill_bridge.perception import parse_perception
-from robot_skill_bridge.trajectory_backend import TrajectoryBackend, to_duration
-from robot_skill_bridge.trajectory_profile import parse_trajectory
+adapter = pytest.importorskip('robot_skill_bridge.trajectory_backend')
+TrajectoryBackend, to_duration = adapter.TrajectoryBackend, adapter.to_duration
 
 CONFIG = Path(__file__).resolve().parents[1] / 'config/pepper_skills.yaml'
 
@@ -29,6 +32,7 @@ def resolved(value):
 def skill():
     return load_catalog(CONFIG, {
         'follow_joint_trajectory': parse_trajectory, 'perception': parse_perception,
+        'base_motion': parse_motion, 'target_location': parse_target,
     })['wave_right']
 
 
@@ -45,8 +49,9 @@ def action_client(accepted=True, status=GoalStatus.STATUS_SUCCEEDED, error_code=
 
 def test_complete_goal_includes_all_points_and_tolerances(skill):
     client, _ = action_client()
-    code, result = TrajectoryBackend(Mock())._run_action(skill, client)
-    assert code == 200 and result['accepted']
+    outcome = TrajectoryBackend(Mock())._run_action(skill, client)
+    result = outcome.to_dict()
+    assert outcome.ok and result['accepted']
     goal = client.send_goal_async.call_args.args[0]
     assert goal.trajectory.joint_names == list(skill.profile.joints)
     for point, expected in zip(goal.trajectory.points, skill.profile.waypoints):
@@ -65,18 +70,18 @@ def test_complete_goal_includes_all_points_and_tolerances(skill):
 ])
 def test_terminal_failures_not_success(skill, accepted, status, error, expected):
     client, _ = action_client(accepted, status, error)
-    code, result = TrajectoryBackend(Mock())._run_action(skill, client)
-    assert code != 200 and not result['ok'] and result['status'] == expected
+    outcome = TrajectoryBackend(Mock())._run_action(skill, client)
+    assert not outcome.ok and outcome.status == expected
 
 
 def test_timeout_requests_cancel_and_blocks_until_terminal_result(skill):
     skill = replace(skill, profile=replace(skill.profile, execution_timeout_sec=.01))
     backend = TrajectoryBackend(Mock())
     client, handle = action_client(pending=True)
-    code, result = backend._run_action(skill, client)
-    assert code == 504 and result['status'] == 'timeout'
+    outcome = backend._run_action(skill, client)
+    assert not outcome.ok and outcome.status == 'timeout'
     handle.cancel_goal_async.assert_called_once()
-    assert backend.execute(skill)[1]['status'] == 'cancel_pending'
+    assert backend.execute(skill).status == 'cancel_pending'
     handle.get_result_async.return_value.set_result(SimpleNamespace(
         status=GoalStatus.STATUS_CANCELED,
         result=SimpleNamespace(error_code=0, error_string=''),
@@ -90,7 +95,7 @@ def test_late_acceptance_still_cancels(skill):
     acceptance = Future()
     client, handle = action_client(pending=True)
     client.send_goal_async.return_value = acceptance
-    assert backend._run_action(skill, client)[0] == 504
+    assert backend._run_action(skill, client).status == 'timeout'
     acceptance.set_result(handle)
     handle.cancel_goal_async.assert_called_once()
     assert backend._cancel_pending.is_set()
@@ -105,14 +110,14 @@ def test_requires_active_controller(skill, controller, state, expected):
     node.create_client.return_value.call_async.return_value = resolved(SimpleNamespace(
         controller=[SimpleNamespace(name=controller, state=state)],
     ))
-    code, result = TrajectoryBackend(node).execute(skill)
-    assert code == 503 and result['status'] == expected
+    outcome = TrajectoryBackend(node).execute(skill)
+    assert not outcome.ok and outcome.status == expected
 
 
 def test_missing_manager_reported(skill):
     node = Mock()
     node.create_client.return_value.wait_for_service.return_value = False
-    assert TrajectoryBackend(node).execute(skill)[1]['status'] == 'controller_unavailable'
+    assert TrajectoryBackend(node).execute(skill).status == 'controller_unavailable'
 
 
 def test_action_unavailable_reported(skill):
@@ -120,7 +125,7 @@ def test_action_unavailable_reported(skill):
     backend.clients[skill.profile.action] = Mock()
     backend.clients[skill.profile.action].wait_for_server.return_value = False
     with patch.object(backend, '_controller_error', return_value=None):
-        assert backend.execute(skill)[1]['status'] == 'controller_unavailable'
+        assert backend.execute(skill).status == 'controller_unavailable'
 
 
 @pytest.mark.parametrize('states,verification,status', [
@@ -138,15 +143,14 @@ def test_success_requires_measurements(skill, states, verification, status):
     backend.observers[skill.profile.joint_states_topic] = observer
     backend.clients[skill.profile.action] = Mock()
     with patch.object(backend, '_controller_error', return_value=None), patch.object(
-        backend, '_run_action', return_value=(200, {
+        backend, '_run_action', return_value=SkillResult.from_dict({
             'ok': True, 'status': 'succeeded', 'accepted': True,
             'action_status': 4, 'error_code': 0,
         }),
     ):
-        code, result = backend.execute(skill)
-    assert result['status'] == status
-    assert result['ok'] == (status == 'succeeded')
-    assert (code == 200) == result['ok']
+        outcome = backend.execute(skill)
+    assert outcome.status == status
+    assert outcome.ok == (status == 'succeeded')
 
 
 @pytest.mark.parametrize('stage', ['send', 'result'])
@@ -159,6 +163,6 @@ def test_unknown_transport_outcome_blocks_another_goal(skill, stage):
         failed = Future()
         failed.set_exception(RuntimeError('result lost'))
         handle.get_result_async.return_value = failed
-    code, result = backend._run_action(skill, client)
-    assert code == 502 and result['status'] == 'ros_error'
-    assert backend.execute(skill)[1]['status'] == 'cancel_pending'
+    outcome = backend._run_action(skill, client)
+    assert not outcome.ok and outcome.status == 'ros_error'
+    assert backend.execute(skill).status == 'cancel_pending'

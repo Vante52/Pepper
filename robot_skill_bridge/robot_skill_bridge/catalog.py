@@ -1,11 +1,14 @@
 """Catálogo genérico: metadatos públicos y validadores de adaptadores inyectados."""
 
+from dataclasses import dataclass, field
 import math
-from dataclasses import dataclass
 from pathlib import Path
+import threading
 from typing import Any, Protocol
 
 import yaml
+
+from .skill_result import SkillResult
 
 
 @dataclass(frozen=True)
@@ -15,11 +18,14 @@ class Skill:
     backend: str
     profile: Any
     kind: str = 'action'
+    parameters: dict = field(default_factory=lambda: {
+        'type': 'object', 'properties': {}, 'additionalProperties': False})
+    public: bool = True
 
 
 class SkillBackend(Protocol):
-    def execute(self, skill: Skill) -> tuple[int, dict]:
-        """Devuelve código HTTP y resultado terminal estructurado."""
+    def execute(self, skill: Skill, parameters=None, cancel=None) -> SkillResult:
+        """Devuelve un resultado de dominio terminal."""
         ...
 
 
@@ -54,15 +60,104 @@ def load_catalog(path, validators):
         kind = data.get('kind', 'action')
         if kind not in ('action', 'perception'):
             raise ValueError(f'{name}: kind debe ser action o perception')
-        catalog[name] = Skill(name, description, backend, profile, kind)
+        schema = data.get('parameters', {'type': 'object', 'properties': {},
+                                         'additionalProperties': False})
+        validate_schema(schema)
+        public = data.get('public', True)
+        if type(public) is not bool:
+            raise ValueError(f'{name}: public debe ser booleano')
+        catalog[name] = Skill(name, description, backend, profile, kind, schema, public)
     return catalog
 
 
+def validate_schema(schema):
+    """Subconjunto explícito de JSON Schema para argumentos escalares de habilidades."""
+    if (not isinstance(schema, dict) or schema.get('type') != 'object'
+            or schema.get('additionalProperties') is not False
+            or not isinstance(schema.get('properties'), dict)):
+        raise ValueError('parameters debe ser un esquema object cerrado')
+    if set(schema.get('required', []))-schema['properties'].keys():
+        raise ValueError('required contiene parámetros no declarados')
+    for name, spec in schema['properties'].items():
+        if not isinstance(name, str) or not isinstance(spec, dict):
+            raise ValueError('Propiedad de parameters inválida')
+        if spec.get('type') not in ('number', 'integer', 'string', 'boolean'):
+            raise ValueError('Solo se admiten parámetros escalares')
+        if 'default' in spec:
+            _argument(spec['default'], spec, name)
+
+
+def _argument(value, spec, name):
+    kind = spec['type']
+    valid = {'number': type(value) in (int, float), 'integer': type(value) is int,
+             'string': isinstance(value, str), 'boolean': type(value) is bool}[kind]
+    if not valid:
+        raise ValueError(f'{name}: tipo incorrecto')
+    if kind in ('number', 'integer'):
+        value = number(value, name)
+        if value < spec.get('minimum', -math.inf) or value > spec.get('maximum', math.inf):
+            raise ValueError(f'{name}: fuera del intervalo permitido')
+    if 'enum' in spec and value not in spec['enum']:
+        raise ValueError(f'{name}: valor no permitido')
+    return value
+
+
+def validate_parameters(skill, parameters=None):
+    parameters = {} if parameters is None else parameters
+    if not isinstance(parameters, dict) or set(parameters)-skill.parameters['properties'].keys():
+        raise ValueError('Parámetros desconocidos o formato incorrecto')
+    values = dict(parameters)
+    for name, spec in skill.parameters['properties'].items():
+        if name not in values and 'default' in spec:
+            values[name] = spec['default']
+        if name in values:
+            values[name] = _argument(values[name], spec, name)
+    if set(skill.parameters.get('required', []))-values.keys():
+        raise ValueError('Faltan parámetros requeridos')
+    return values
+
+
 class BackendRouter:
-    """Despacha por contrato; no importa implementaciones de hardware ni de IA."""
+    """Despacha, compone y cancela sin conocer hardware, simulador ni proveedor IA."""
 
-    def __init__(self, backends):
-        self.backends = backends
+    def __init__(self, backends, catalog=None):
+        self.backends, self.catalog = backends, catalog or {}
+        self._busy, self._cancel = threading.Lock(), threading.Event()
+        self._closed = False
 
-    def execute(self, skill):
-        return self.backends[skill.backend].execute(skill)
+    def execute(self, skill, parameters=None):
+        if self._closed:
+            return SkillResult(False, 'unavailable', skill.name, 'El ejecutor está cerrándose')
+        try:
+            parameters = validate_parameters(skill, parameters)
+        except ValueError as exc:
+            return SkillResult(False, 'invalid_parameters', skill.name, str(exc))
+        locked = skill.kind == 'action'
+        if locked and not self._busy.acquire(blocking=False):
+            return SkillResult(False, 'busy', skill.name)
+        if locked:
+            self._cancel.clear()
+        try:
+            return self.dispatch(skill, parameters, self._cancel)
+        finally:
+            if locked:
+                self._busy.release()
+
+    def dispatch(self, skill, parameters, cancel):
+        if skill.kind == 'action' and cancel.is_set():
+            return SkillResult(False, 'canceled', skill.name)
+        return self.backends[skill.backend].execute(skill, parameters, cancel)
+
+    def cancel(self):
+        self._cancel.set()
+        return SkillResult(True, 'cancel_requested', detail='Cancelación solicitada')
+
+    def close(self):
+        self._closed = True
+        self._cancel.set()
+        for backend in self.backends.values():
+            close = getattr(backend, 'close', None)
+            if callable(close):
+                close()
+        if self._busy.acquire(timeout=3.):
+            self._busy.release()

@@ -5,7 +5,7 @@ joint_states_topic: /joint_states
 robot_description_topic: /robot_description
 controller_activity_topic: /controller_manager/activity
 publish_rate: 30.0
-key_timeout: 0.5
+key_timeout: 0.75
 feedback_timeout: 2.0
 linear_speed: 0.50
 angular_speed: 1.25

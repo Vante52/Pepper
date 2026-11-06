@@ -78,10 +78,11 @@ base_controller:
   ros__parameters:
     use_sim_time: true
     wheel_names: [WheelFL, WheelB, WheelFR]
-    # Aproximación circular de los centros del URDF, ligeramente asimétricos.
+    # Radios cinemáticos efectivos ajustados con GZ Pose_V; ver validation/README.md.
+    # Dimensiones nominales URDF: radio medio 0.176156 m y rueda 0.070 m.
     wheel_offset: 1.0471975511965976
-    robot_radius: 0.17615632219289948
-    wheel_radius: 0.070
+    robot_radius: 0.1746
+    wheel_radius: 0.0698
     open_loop: false
     position_feedback: false
     cmd_vel_timeout: 0.3
