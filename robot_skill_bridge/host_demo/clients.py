@@ -1,4 +1,4 @@
-"""Adaptadores HTTP de habilidades y del único proveedor de IA utilizado."""
+"""Adaptadores HTTP de habilidades y selección de modelos de texto e imagen."""
 
 import json
 from urllib.error import HTTPError, URLError
@@ -50,25 +50,19 @@ class HttpSkillClient:
 
 
 class OllamaModel:
-    def __init__(self, model='qwen3.5:4b', url='http://127.0.0.1:11434/api/chat',
-                 transport=get_json, thinking=False):
+    def __init__(self, model='qwen2.5:7b', url='http://127.0.0.1:11434/api/chat',
+                 transport=get_json, thinking=False, vision_model='qwen3-vl:2b-instruct'):
         self.model, self.url, self.transport = model, url, transport
         self.thinking = thinking
+        self.vision_model = vision_model
 
     def generate(self, messages, schema):
         messages = [dict(message) for message in messages]
-        contract = ('\nResponde SOLO JSON válido, sin Markdown. Empieza por { y termina por }. '
-                    'Esquema: '
-                    + json.dumps(schema))
-        contract += '\nForma de la respuesta (rellena los valores): ' + json.dumps(example(schema))
-        if messages and messages[0]['role'] == 'system':
-            messages[0]['content'] += contract
-        else:
-            messages.insert(0, {'role': 'system', 'content': contract})
         payload = {
-            'model': self.model, 'messages': messages, 'format': schema,
+            'model': self.vision_model if any(m.get('images') for m in messages) else self.model,
+            'messages': messages, 'format': schema,
             'stream': False, 'think': self.thinking,
-            'options': {'temperature': 0, 'num_predict': 1024, 'num_ctx': 8192},
+            'options': {'temperature': 0, 'num_predict': 256, 'num_ctx': 4096},
         }
         for attempt in range(2):
             response = self.transport(self.url, payload, timeout=180)
@@ -83,16 +77,7 @@ class OllamaModel:
                 # Repara la sintaxis con el mismo modelo, sin ejecutar ninguna habilidad.
                 payload['messages'] = [
                     *messages, {'role': 'assistant', 'content': content},
-                    {'role': 'user', 'content': 'Salida inválida. Devuelve solo el objeto JSON '
-                     'del esquema, sin explicaciones ni Markdown.'},
+                    {'role': 'user', 'content': 'Corrige solo el formato. Devuelve un objeto JSON '
+                     'sin Markdown conforme a este esquema: '
+                     + json.dumps(schema, ensure_ascii=False, separators=(',', ':'))},
                 ]
-
-
-def example(schema):
-    if 'enum' in schema:
-        return schema['enum'][-1]
-    if schema.get('type') == 'object':
-        return {key: example(value) for key, value in schema.get('properties', {}).items()}
-    if isinstance(schema.get('type'), list) and 'null' in schema['type']:
-        return None
-    return 'respuesta breve'

@@ -19,7 +19,6 @@ from controller_manager_msgs.srv import ListControllers
 from rclpy.action import ActionClient
 
 from trajectory_msgs.msg import JointTrajectoryPoint
-
 from .joint_observer import JointObserver
 
 

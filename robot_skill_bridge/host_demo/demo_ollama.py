@@ -51,7 +51,8 @@ def main():
         config = load_config(args.agent_config)
         model = OllamaModel(config['model'],
                             os.getenv('OLLAMA_URL', 'http://127.0.0.1:11434/api/chat'),
-                            thinking=config.get('thinking', False))
+                            thinking=config.get('thinking', False),
+                            vision_model=config['vision_model'])
         memory = ConversationMemory(None if args.no_memory else args.memory_file,
                                     config['max_history_turns'])
         agent = MultimodalAgent(bridge, model, config, memory)
@@ -69,7 +70,7 @@ def main():
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 1 if result.get('result', {}).get('ok') is False else 0
         else:
-            print('Pepper listo. /reset borra la memoria; /exit termina la conversación.')
+            print('Pepper listo. /look [pregunta] observa; /reset borra memoria; /exit termina.')
             while True:
                 text = input('Tú > ').strip()
                 if text == '/exit':
@@ -77,8 +78,18 @@ def main():
                 if text == '/reset':
                     memory.clear()
                 elif text:
-                    result = agent.turn(text)
+                    try:
+                        parts = text.split(maxsplit=1)
+                        perceive = parts[0] == '/look'
+                        if perceive:
+                            text = parts[1] if len(parts) == 2 else '¿Qué ves frente a ti?'
+                        result = agent.turn(text, perceive=perceive)
+                    except (RuntimeError, ValueError, KeyError, OSError) as exc:
+                        print(f'[ERROR] No pude completar este turno: {exc}', file=sys.stderr)
+                        continue
                     print('Pepper > ' + result['reply'])
+                    if result.get('perception_error'):
+                        print('[Percepción: ' + str(result['perception_error']) + ']')
                     if result.get('result'):
                         print('[Habilidad: ' + str(result['result'].get('status')) + ']')
         return 0

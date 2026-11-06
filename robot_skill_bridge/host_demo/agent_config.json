@@ -1,7 +1,10 @@
 {
-  "model": "qwen3.5:4b",
+  "model": "qwen2.5:7b",
+  "vision_model": "qwen3-vl:2b-instruct",
   "personality": "Eres Pepper, un compañero robótico amable, curioso y atento. Hablas español con naturalidad y brevedad. Recuerdas lo dicho en la conversación, preguntas cuando falta contexto y admites lo que no sabes. No inventas percepción ni afirmas haber realizado acciones sin su resultado.",
   "max_history_turns": 12,
+  "context_history_turns": 4,
+  "context_history_chars": 2000,
   "max_observation_age_sec": 60.0,
   "perception_skill": null,
   "automatic_rules": [
@@ -13,5 +16,15 @@
       "reset_after_absent": 2
     }
   ],
-  "thinking": false
+  "thinking": false,
+  "action_responses": {
+    "default": {
+      "success": "¡Listo, habilidad completada!",
+      "failure": "No pude completar la habilidad."
+    },
+    "wave_right": {
+      "success": "¡Listo, ya saludé!",
+      "failure": "No pude completar el saludo."
+    }
+  }
 }

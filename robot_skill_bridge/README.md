@@ -1,13 +1,13 @@
 # Robot Skill Bridge
 
 Conecta un agente conversacional con percepción y habilidades robóticas por
-HTTP/JSON. El agente usa **Qwen3.5 4B** para conversar, interpretar imágenes y
-seleccionar habilidades. El movimiento lo ejecutan los controladores ROS 2.
+HTTP/JSON. El agente usa **Qwen2.5 7B** para conversar y seleccionar habilidades,
+y **Qwen3-VL 2B Instruct** únicamente para analizar imágenes solicitadas. El movimiento lo ejecutan los controladores ROS 2.
 
 ```text
-Conversación + memoria → Qwen3.5 4B → nombre de habilidad → HTTP → adaptador ROS 2
-                              ↑                                     ↓
-                         imagen actual ← PerceptionProvider ← cámara / archivo
+Conversación + memoria → Qwen2.5 7B → habilidad → HTTP → adaptador ROS 2
+                              ↓ solo si necesita visión
+                       imagen nueva → Qwen3-VL 2B → observaciones → Qwen2.5 7B
 ```
 
 La integración visión–lenguaje–acción es discreta: el modelo reconoce una escena
@@ -43,8 +43,9 @@ Terminal 3, con Ollama ejecutándose y el modelo instalado:
 
 ```bash
 ollama list
-# Si falta el modelo:
-ollama pull qwen3.5:4b
+# Si faltan los modelos:
+ollama pull qwen2.5:7b
+ollama pull qwen3-vl:2b-instruct
 
 python3 src/robot_skill_bridge/host_demo/demo_ollama.py '¿Qué hay frente a ti?'
 ```
@@ -56,8 +57,12 @@ python3 src/robot_skill_bridge/host_demo/demo_ollama.py
 ```
 
 Puedes decir «Me llamo Ana», preguntar después «¿Cómo me llamo?» y pedir «Saluda
-con el brazo derecho». `/exit` termina y `/reset` borra conversación y estado de
-las reglas automáticas.
+con el brazo derecho». «Qué ves?» solicita una observación nueva cuando Qwen2.5
+identifica la necesidad de visión. `/look` o `/look qué hay delante?` pide la
+imagen explícitamente y omite esa interpretación inicial.
+`/exit` termina y `/reset` borra conversación y estado de las reglas automáticas.
+Un fallo de decisión se muestra y permite seguir escribiendo. Los errores reales
+de adquisición se muestran como `[Percepción: ...]`.
 
 ## Percepción
 
@@ -97,8 +102,17 @@ haber visto algo sin imagen se rechaza.
 
 ## Saludar al ver una persona
 
-Cada turno obtiene una imagen y evalúa las reglas del agente. Para observar sin
-esperar preguntas:
+Las conversaciones y las órdenes robóticas directas no adquieren imágenes.
+Qwen2.5 interpreta primero el texto y solicita `perception_required: true` cuando
+necesita comprobar la escena o una condición visual. Solo entonces se ejecuta
+`look_front` y se envía la imagen nueva a Qwen3-VL. Este devuelve una descripción
+y observaciones; Qwen2.5 usa esos datos de texto para responder y decidir las
+habilidades. El modelo visual no recibe el catálogo ni solicita acciones.
+Si falta una imagen válida,
+no se ejecuta una acción pendiente de esa comprobación.
+
+Las reglas automáticas se evalúan después de una observación solicitada. Para
+observar continuamente sin esperar preguntas:
 
 ```bash
 python3 src/robot_skill_bridge/host_demo/demo_ollama.py --watch --interval 5
@@ -136,10 +150,29 @@ el bloqueo se aplica a presencia en la escena, no a cada individuo.
 
 ## Modelo, personalidad y memoria
 
-`host_demo/agent_config.json` selecciona el único modelo de todos los turnos y
-contiene personalidad, reglas y tamaño de memoria. La misma instancia del
-adaptador verbaliza el resultado real después de ejecutar una acción. No hay
-un segundo modelo de conversación, detección o movimiento.
+`host_demo/agent_config.json` configura ambos modelos:
+
+```json
+{
+  "model": "qwen2.5:7b",
+  "vision_model": "qwen3-vl:2b-instruct"
+}
+```
+
+`model` procesa exclusivamente texto: conversación, interpretación inicial de
+órdenes y respuestas sobre las imágenes analizadas. `vision_model`
+solo recibe peticiones que incluyen una imagen actual y devuelve hechos visuales.
+Un turno visual natural requiere interpretación de texto, análisis de imagen y
+respuesta de texto; un turno normal no consulta el modelo visual. `--watch`
+solicita observación explícitamente en cada ciclo y usa después Qwen2.5 para
+evaluar las reglas y responder.
+La personalidad, la memoria y las reglas siguen siendo comunes al agente.
+
+Las habilidades no hacen una inferencia para confirmar su ejecución. La
+respuesta sale de `action_responses` en `agent_config.json`, usando únicamente
+`result.get('ok') is True` para confirmar éxito. Para `wave_right`, el éxito
+responde «¡Listo, ya saludé!» y un fallo «No pude completar el saludo.». Las
+habilidades nuevas usan `default` salvo que tengan sus propias plantillas.
 
 La memoria conserva los últimos 12 turnos y el estado de los disparadores en:
 
@@ -152,16 +185,27 @@ sesión y `--no-memory` conserva memoria únicamente durante el proceso. La memo
 no guarda imágenes, trayectorias ni articulaciones. No es una base de memoria
 semántica ilimitada; al superar el límite se descartan los turnos antiguos.
 
+El contexto enviado al modelo se limita por separado mediante
+`context_history_turns: 4` y `context_history_chars: 2000`. Solo incluye el texto
+reciente del diálogo; omite observaciones, acciones y resultados del historial.
+El archivo de memoria conserva hasta `max_history_turns: 12`. Un valor 0 en
+cualquiera de los límites de contexto omite el historial del prompt.
+
+La interpretación inicial utiliza instrucciones cortas y un resumen de nombres
+y descripciones de habilidades. No envía ejemplos de conversación ni la
+configuración de reglas automáticas. El origen de la acción lo determina el
+programa según el modo de ejecución, y las reglas se aplican fuera del modelo.
+Conversaciones y comandos directos necesitan una inferencia en condiciones
+normales. Ninguna habilidad añade una inferencia después de recibir su resultado.
+
 `SKILL_BRIDGE_URL` cambia la URL del puente y `OLLAMA_URL` el endpoint `/api/chat`.
 `--agent-config /ruta/agent.json` permite otra personalidad o configuración.
 El cliente no importa ROS 2 ni el paquete Python del bridge.
 
-En Ollama 0.21.0 se observó que `think=false` puede ignorar `format` con Qwen3.5
-([incidencia oficial](https://github.com/ollama/ollama/issues/14645)). El adaptador
-incluye el esquema y un ejemplo en el prompt; si la sintaxis no es JSON, admite
-una única corrección con **el mismo modelo**. Después valida la decisión de forma
-estricta antes de actuar. Si vuelve a fallar, no se ejecuta nada. `thinking` puede
-activarse en la configuración, con mayor latencia; no se expone su razonamiento.
+El esquema JSON se envía mediante `format` de Ollama, sin copiarlo ni añadir un
+ejemplo al prompt. Solo si falla la sintaxis se permite una corrección con el
+mismo modelo y el esquema como ayuda. La decisión se valida antes de actuar;
+no se repite la ejecución de una habilidad para corregir su respuesta.
 
 ## Separación entre módulos
 
