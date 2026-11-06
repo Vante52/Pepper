@@ -5,7 +5,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 from ament_index_python.packages import get_package_share_directory
-from pepper_gz.control_config import validate_control
+from pepper_gz.control_config import startup_groups, validate_control
 import pytest
 import xacro
 import yaml
@@ -37,7 +37,8 @@ def velocity_wheels(robot):
     """Exporta comandos solo en la copia URDF utilizada por la prueba."""
     for joint in robot.findall('ros2_control/joint'):
         if joint.get('name') in ('WheelFL', 'WheelFR', 'WheelB'):
-            ET.SubElement(joint, 'command_interface', name='velocity')
+            if joint.find("command_interface[@name='velocity']") is None:
+                ET.SubElement(joint, 'command_interface', name='velocity')
 
 
 def test_installed_configuration(model):
@@ -157,13 +158,19 @@ def test_continuous_joint_has_no_position_bounds(model):
     """Las ruedas continuas no reciben límites de posición ficticios."""
     robot, config = model
     state = robot.find('ros2_control/joint[@name="WheelFL"]/state_interface[@name="position"]')
-    ET.SubElement(state, 'param', name='initial_value').text = '123.0'
+    state.find('param').text = '123.0'
     assert validate_control(robot, config)
 
 
 def test_velocity_controller_does_not_require_trajectory_parameters(model):
     """Un controlador de ruedas solicita velocity, sin asumir interfaz position ni feedback."""
     robot, config = model
+    del config['controller_manager']['ros__parameters']['base_controller']
+    del config['base_controller']
+    for joint in robot.findall('ros2_control/joint'):
+        command = joint.find("command_interface[@name='velocity']")
+        if command is not None:
+            joint.remove(command)
     add_controller(config, 'wheels', 'velocity_controllers/JointGroupVelocityController', {
         'joints': ['WheelFL', 'WheelFR', 'WheelB'],
     })
@@ -405,4 +412,77 @@ def test_zero_is_not_valid_for_arm_roll(model, name):
     joint = robot.find(f'ros2_control/joint[@name="{name}"]')
     joint.find('state_interface[@name="position"]/param').text = '0.0'
     with pytest.raises(ValueError, match=f'{name}.*posición inicial'):
+        validate_control(robot, config)
+
+
+def test_paused_startup_keeps_selected_controllers_inactive(model):
+    """El arranque pausado no intenta cambiar controladores al estado activo."""
+    robot, config = model
+    policy(config, ['joint_state_broadcaster', 'posture_controller'], ['head_controller'])
+    plan = validate_control(robot, config)
+    assert startup_groups(plan, True) == [('inactive', (
+        'joint_state_broadcaster', 'posture_controller', 'head_controller'))]
+    assert startup_groups(plan, False) == [
+        ('active', ('joint_state_broadcaster', 'posture_controller')),
+        ('inactive', ('head_controller',)),
+    ]
+    policy(config)
+    assert startup_groups(validate_control(robot, config), True) == []
+    assert startup_groups(validate_control(robot, config), False) == []
+
+
+def test_simulation_control_plugin_and_neutral_posture(model, tmp_path):
+    """Un único sistema conserva plugin, YAML y cinco ceros válidos al convertir a SDF."""
+    import subprocess
+
+    robot, config = model
+    systems = robot.findall('ros2_control')
+    assert len(systems) == 1
+    assert systems[0].get('type') == 'system'
+    assert systems[0].findtext('hardware/plugin') == 'gz_ros2_control/GazeboSimSystem'
+    for name in ('HipRoll', 'HipPitch', 'KneePitch', 'HeadYaw', 'HeadPitch'):
+        joint = systems[0].find(f'joint[@name="{name}"]')
+        assert [e.get('name') for e in joint.findall('command_interface')] == ['position']
+        states = {e.get('name') for e in joint.findall('state_interface')}
+        assert states == {'position', 'velocity'}
+        assert float(joint.findtext('state_interface[@name="position"]/param')) == 0.
+    assert validate_control(robot, config)
+    urdf = tmp_path / 'pepper.urdf'
+    urdf.write_text(ET.tostring(robot, encoding='unicode'))
+    converted = subprocess.run(['gz', 'sdf', '-p', str(urdf)], check=True,
+                               capture_output=True, text=True, timeout=20)
+    sdf = ET.fromstring(converted.stdout)
+    plugins = sdf.findall('model/plugin[@name="gz_ros2_control::GazeboSimROS2ControlPlugin"]')
+    assert len(plugins) == 1
+    assert plugins[0].get('filename') == 'libgz_ros2_control-system.so'
+    assert plugins[0].findtext('hold_joints') == 'true'
+    share = Path(get_package_share_directory('pepper_gz'))
+    assert Path(plugins[0].findtext('parameters')).resolve() == (
+        share / 'config/controllers.yaml').resolve()
+
+
+@pytest.mark.parametrize('feedback', [True, False])
+def test_omni_feedback_interfaces(model, feedback):
+    """Cada modo de realimentación requiere la interfaz correspondiente."""
+    robot, config = model
+    config['base_controller']['ros__parameters']['position_feedback'] = feedback
+    result = validate_control(robot, config).controllers['base_controller']
+    assert result.interfaces.commands == frozenset(
+        (joint, 'velocity') for joint in ['WheelFL', 'WheelB', 'WheelFR'])
+    state = 'position' if feedback else 'velocity'
+    wheel = robot.find('ros2_control/joint[@name="WheelFL"]')
+    wheel.remove(wheel.find(f'state_interface[@name="{state}"]'))
+    with pytest.raises(ValueError, match=f'base_controller.*WheelFL/{state}'):
+        validate_control(robot, config)
+
+
+@pytest.mark.parametrize('key,value', [
+    ('wheel_radius', 0), ('robot_radius', -1), ('wheel_offset', float('nan')),
+    ('cmd_vel_timeout', 0), ('wheel_names', ['WheelFL', 'WheelFR']),
+])
+def test_invalid_omni_configuration(model, key, value):
+    """Geometría o timeout inválidos no deben llegar a la simulación."""
+    robot, config = model
+    config['base_controller']['ros__parameters'][key] = value
+    with pytest.raises(ValueError, match='base_controller'):
         validate_control(robot, config)

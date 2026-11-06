@@ -18,7 +18,8 @@ from launch.events import Shutdown
 from launch.logging import get_logger
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from pepper_gz.control_config import validate_control
+from pepper_gz.control_config import startup_groups, validate_control
+from pepper_gz.wheel_contacts import configure_wheel_contacts
 import rclpy
 from rclpy.context import Context
 from rclpy.executors import SingleThreadedExecutor
@@ -42,6 +43,7 @@ def shutdown_with_error(message):
 
 def guard_instances(
     start_gazebo, publish_tf, start_bridge, startup_controllers, spawn_robot, bridges, world_name,
+    start_cmd_vel_guard=False,
 ):
     """Detecta servidores y publicadores activos en la partición y dominio actuales."""
     result = subprocess.run(
@@ -71,6 +73,8 @@ def guard_instances(
         if publish_tf and any('robot_state_publisher' in name for name in node.get_node_names()):
             conflicts.append('robot_state_publisher')
         existing_nodes = set(node.get_node_names())
+        if start_cmd_vel_guard and 'cmd_vel_guard' in existing_nodes:
+            conflicts.append('cmd_vel_guard: use start_cmd_vel_guard:=false para reutilizarlo')
         for name in startup_controllers:
             if name in existing_nodes:
                 conflicts.append(f'{name}: use start_controllers:=false para reutilizarlo')
@@ -153,15 +157,20 @@ def resolve_world(value, share):
 def launch_setup(context):
     """Prepara el SDF y las instancias solicitadas."""
     share = Path(get_package_share_directory('pepper_gz'))
+    paused = flag(context, 'paused')
     description = Path(get_package_share_directory('pepper_description'))
     world_path, world_name = resolve_world(LaunchConfiguration('world').perform(context), share)
     spawn_timeout = float(LaunchConfiguration('spawn_timeout').perform(context))
     if not math.isfinite(spawn_timeout) or spawn_timeout <= 0:
         raise ValueError('spawn_timeout debe ser un número positivo de segundos reales')
     config_path = Path(LaunchConfiguration('sensors_config').perform(context))
+    config_path = config_path.expanduser().resolve(strict=True)
     bridge_path = Path(LaunchConfiguration('bridge_config').perform(context))
+    bridge_path = bridge_path.expanduser().resolve(strict=True)
     controllers_path = Path(LaunchConfiguration('controllers_config').perform(context))
+    controllers_path = controllers_path.expanduser().resolve(strict=True)
     initial_positions_path = Path(LaunchConfiguration('initial_positions_config').perform(context))
+    initial_positions_path = initial_positions_path.expanduser().resolve(strict=True)
     config = yaml.safe_load(config_path.read_text())
     bridges = yaml.safe_load(bridge_path.read_text())
     for bridge in bridges:
@@ -182,10 +191,11 @@ def launch_setup(context):
     start_bridge = flag(context, 'start_bridge')
     start_controllers = flag(context, 'start_controllers')
     spawn_robot = flag(context, 'spawn_robot')
+    start_cmd_vel_guard = flag(context, 'start_cmd_vel_guard')
     guard_instances(
         start_gazebo, publish_tf, start_bridge,
         control_plan.active + control_plan.inactive if start_controllers else (), spawn_robot,
-        bridges, world_name,
+        bridges, world_name, start_cmd_vel_guard,
     )
     directory = Path(tempfile.mkdtemp(prefix='pepper_gz_'))
     urdf = directory / 'pepper.urdf'
@@ -209,7 +219,9 @@ def launch_setup(context):
         moving = {j.get('name') for j in robot.findall('joint') if j.get('type') != 'fixed'}
         if not moving <= {j.get('name') for j in model.findall('model/joint')}:
             raise RuntimeError('La conversión a SDF perdió articulaciones móviles')
-        sdf.write_text(result.stdout)
+        configure_wheel_contacts(model, yaml.safe_load(Path(
+            LaunchConfiguration('wheel_contacts_config').perform(context)).read_text()))
+        sdf.write_text(ET.tostring(model, encoding='unicode'))
         resolved_bridge.write_text(yaml.safe_dump(bridges, sort_keys=False))
     except Exception:
         shutil.rmtree(directory)
@@ -228,7 +240,7 @@ def launch_setup(context):
     )))
     if start_gazebo:
         command = ['gz', 'sim', '-v', '3']
-        if not flag(context, 'paused'):
+        if not paused:
             command.append('-r')
         if not flag(context, 'gui'):
             command += ['-s', '--headless-rendering']
@@ -250,15 +262,20 @@ def launch_setup(context):
             name='pepper_sensors_bridge', output='screen',
             parameters=[{'config_file': str(resolved_bridge), 'use_sim_time': True}],
         ))
+    if start_cmd_vel_guard:
+        actions.append(Node(
+            package='pepper_gz', executable='cmd_vel_guard', output='screen',
+            parameters=[LaunchConfiguration('teleop_config')],
+        ))
     spawner_arguments = [
         '--controller-manager', '/controller_manager',
-        '--controller-manager-timeout', '45', '--service-call-timeout', '10',
+        '--controller-manager-timeout', '120', '--service-call-timeout', '30',
         '--switch-timeout', '10',
     ]
     groups = []
     spawners = []
     if start_controllers:
-        for state, names in [('active', control_plan.active), ('inactive', control_plan.inactive)]:
+        for state, names in startup_groups(control_plan, paused):
             if not names:
                 continue
             groups.append((state, names))
@@ -283,6 +300,16 @@ def launch_setup(context):
         result = [LogInfo(msg=f'Controladores en estado {state}: {selected}')]
         if index + 1 < len(spawners):
             result.append(spawners[index + 1])
+        elif paused and control_plan.active:
+            request = yaml.safe_dump({
+                'activate_controllers': list(control_plan.active), 'strictness': 2,
+                'timeout': {'sec': 10, 'nanosec': 0},
+            }, default_flow_style=True, width=10000).strip()
+            result.append(LogInfo(msg=(
+                'Controladores configurados sin activar. Pulse Play y ejecute: '
+                'ros2 service call /controller_manager/switch_controller '
+                'controller_manager_msgs/srv/SwitchController ' + "'" + request + "'"
+            )))
         return result
 
     for index, spawner in enumerate(spawners):
@@ -343,6 +370,11 @@ def generate_launch_description():
         DeclareLaunchArgument('publish_tf', default_value='true'),
         DeclareLaunchArgument('start_bridge', default_value='true'),
         DeclareLaunchArgument('start_controllers', default_value='true'),
+        DeclareLaunchArgument('start_cmd_vel_guard', default_value='true'),
+        DeclareLaunchArgument(
+            'teleop_config', default_value=str(share / 'config/base_teleop.yaml')),
+        DeclareLaunchArgument(
+            'wheel_contacts_config', default_value=str(share / 'config/wheel_contacts.yaml')),
         DeclareLaunchArgument('spawn_z', default_value='0.602'),
         DeclareLaunchArgument('world', default_value='minimal_world.sdf', description=(
             'Archivo de pepper_gz/worlds o ruta absoluta a un SDF con un único mundo.'

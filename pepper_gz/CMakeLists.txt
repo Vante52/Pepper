@@ -8,6 +8,9 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 ament_python_install_package(${PROJECT_NAME} PACKAGE_DIR src/${PROJECT_NAME})
+install(PROGRAMS src/nodes/cmd_vel_guard src/nodes/keyboard_teleop
+  DESTINATION lib/${PROJECT_NAME})
+install(FILES README.md DESTINATION share/${PROJECT_NAME})
 install(
   DIRECTORY
     src/launch
@@ -21,6 +24,7 @@ install(
 if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
   ament_add_pytest_test(control_config test/test_control_config.py TIMEOUT 45)
+  ament_add_pytest_test(teleop test/test_teleop.py TIMEOUT 30)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
   set(ament_cmake_cpplint_FOUND TRUE)

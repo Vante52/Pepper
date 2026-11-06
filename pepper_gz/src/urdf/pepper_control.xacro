@@ -27,6 +27,14 @@
     </joint>
   </xacro:macro>
 
+  <xacro:macro name="pepper_velocity_joint" params="name initial_position:=0.0">
+    <joint name="${name}">
+      <command_interface name="velocity"/>
+      <state_interface name="position"><param name="initial_value">${initial_position}</param></state_interface>
+      <state_interface name="velocity"><param name="initial_value">0.0</param></state_interface>
+    </joint>
+  </xacro:macro>
+
   <ros2_control name="PepperGazeboSystem" type="system">
     <hardware>
       <plugin>gz_ros2_control/GazeboSimSystem</plugin>
@@ -47,9 +55,9 @@
 
     <xacro:pepper_passive_joint name="LHand"/>
     <xacro:pepper_passive_joint name="RHand"/>
-    <xacro:pepper_passive_joint name="WheelFL"/>
-    <xacro:pepper_passive_joint name="WheelFR"/>
-    <xacro:pepper_passive_joint name="WheelB"/>
+    <xacro:pepper_velocity_joint name="WheelFL" initial_position="${control_initial_positions['WheelFL']}"/>
+    <xacro:pepper_velocity_joint name="WheelFR" initial_position="${control_initial_positions['WheelFR']}"/>
+    <xacro:pepper_velocity_joint name="WheelB" initial_position="${control_initial_positions['WheelB']}"/>
   </ros2_control>
 
   <gazebo>

@@ -1,0 +1,32 @@
+# Parámetros de teleoperación en simulación, no especificaciones de hardware.
+base_topic: /cmd_vel
+base_controller: base_controller
+joint_states_topic: /joint_states
+robot_description_topic: /robot_description
+controller_activity_topic: /controller_manager/activity
+publish_rate: 30.0
+key_timeout: 0.5
+feedback_timeout: 2.0
+linear_speed: 0.50
+angular_speed: 1.25
+joint_step: 0.15
+trajectory_duration: 0.4
+max_joint_lead: 1.0
+base_keys:
+  w: [1, 0, 0]
+  up: [1, 0, 0]
+  s: [-1, 0, 0]
+  down: [-1, 0, 0]
+  a: [0, 0, 1]
+  left: [0, 0, 1]
+  d: [0, 0, -1]
+  right: [0, 0, -1]
+  q: [0, 1, 0]
+  e: [0, -1, 0]
+joint_keys:
+  k: [head_controller, HeadYaw, 1]
+  ñ: [head_controller, HeadYaw, -1]
+  o: [head_controller, HeadPitch, -1]
+  l: [head_controller, HeadPitch, 1]
+# Tab: siguiente controlador articular; [ / ]: anterior/siguiente articulación;
+# - / +: disminuir/aumentar la articulación seleccionada (postura, brazos, cabeza).

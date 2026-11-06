@@ -15,3 +15,6 @@ initial_positions:
   RElbowYaw: 0.0
   RElbowRoll: 0.15
   RWristYaw: 0.0
+  WheelFL: 0.0
+  WheelFR: 0.0
+  WheelB: 0.0

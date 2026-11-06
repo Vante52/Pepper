@@ -7,6 +7,7 @@ pepper_gz:
       - head_controller
       - left_arm_controller
       - right_arm_controller
+      - base_controller
     inactive_controllers: []
     # Los controladores declarados fuera de ambas listas no se cargan al arrancar.
 
@@ -25,6 +26,8 @@ controller_manager:
       type: joint_trajectory_controller/JointTrajectoryController
     right_arm_controller:
       type: joint_trajectory_controller/JointTrajectoryController
+    base_controller:
+      type: omni_wheel_drive_controller/OmniWheelDriveController
 
 joint_state_broadcaster:
   ros__parameters:
@@ -70,3 +73,23 @@ right_arm_controller:
     allow_partial_joints_goal: false
     interpolate_from_desired_state: false
     set_last_command_interface_value_as_state_on_activation: false
+
+base_controller:
+  ros__parameters:
+    use_sim_time: true
+    wheel_names: [WheelFL, WheelB, WheelFR]
+    # Aproximación circular de los centros del URDF, ligeramente asimétricos.
+    wheel_offset: 1.0471975511965976
+    robot_radius: 0.17615632219289948
+    wheel_radius: 0.070
+    open_loop: false
+    position_feedback: false
+    cmd_vel_timeout: 0.3
+    odom_frame_id: odom
+    base_frame_id: base_link
+    tf_frame_prefix_enable: false
+    enable_odom_tf: false
+    # Covarianzas provisionales de simulación, pendientes de calibración.
+    diagonal_covariance:
+      pose: [0.01, 0.01, 1000000.0, 1000000.0, 1000000.0, 0.05]
+      twist: [0.01, 0.01, 1000000.0, 1000000.0, 1000000.0, 0.05]

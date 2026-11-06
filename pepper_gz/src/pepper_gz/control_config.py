@@ -38,6 +38,16 @@ class ControlPlan:
     inactive: tuple
 
 
+def startup_groups(plan, paused):
+    """Carga sin activar si la física aún no está avanzando."""
+    if paused:
+        selected = plan.active + plan.inactive
+        return [('inactive', selected)] if selected else []
+    return [(state, names) for state, names in (
+        ('active', plan.active), ('inactive', plan.inactive),
+    ) if names]
+
+
 def _mapping(value, label):
     if not isinstance(value, dict):
         raise ValueError(f'{label}: se esperaba un diccionario')
@@ -199,6 +209,18 @@ def _diff_drive(params, available):
     )
 
 
+def _omni_drive(params, available):
+    joints = _names(params.get('wheel_names'), 'wheel_names')
+    if len(joints) < 3:
+        raise ValueError('omni requiere al menos tres ruedas')
+    for key in ('robot_radius', 'wheel_radius', 'cmd_vel_timeout'):
+        _number(params.get(key), key, positive=True)
+    _number(params.get('wheel_offset'), 'wheel_offset')
+    feedback = 'position' if _boolean(params, 'position_feedback', True) else 'velocity'
+    states = [] if _boolean(params, 'open_loop') else [feedback]
+    return joints, _resources(joints, commands=['velocity'], states=states)
+
+
 VALIDATORS = {
     'joint_trajectory_controller/JointTrajectoryController': _trajectory,
     'joint_state_broadcaster/JointStateBroadcaster': _broadcaster,
@@ -211,6 +233,7 @@ VALIDATORS = {
     'effort_controllers/JointGroupEffortController':
         lambda p, a: _forward(p, a, 'effort'),
     'diff_drive_controller/DiffDriveController': _diff_drive,
+    'omni_wheel_drive_controller/OmniWheelDriveController': _omni_drive,
 }
 
 
